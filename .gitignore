@@ -1,0 +1,8 @@
+build/*
+bin/*
+lib/*
+*.o
+*.dat
+*.vtu
+*.vtp
+src/tags
