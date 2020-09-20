@@ -23,8 +23,8 @@
 * Free Software Foundation, Inc., 51 Franklin Street, 
 * Fifth Floor, Boston, MA 02110-1301, USA.
 */
-#ifndef SOLVER_REFINE_H
-#define SOLVER_REFINE_H
+#ifndef SOLVER_GRADIENTS_H
+#define SOLVER_GRADIENTS_H
 
 #ifndef P4_TO_P8
 #include <p4est_vtk.h>
@@ -39,43 +39,46 @@
 #endif
 
 #include "solver/typedefs.h"
-#include "solver/util.h"
+#include "solver/simData.h"
+#include "solver/quadData.h"
 
 /***********************************************************
-* calcSqrErr_scalar()
+* resetDerivatives()
 *-----------------------------------------------------------
-* This function estimates the approximation error 
-* on a quadrant for the passive scalar variable.
-*
-* The estimate is computed by integrating the difference of a 
-* constant approximation at the midpoint and a linear 
-* approximation that interpolates at the midpoint.
-*
-* The square of the error estiamte for the state variables 
-* contained is returned.
-*
+* Function to reset the derivatives of a quadrant 
+*   -> p4est_iter_volume_t callback function
 ***********************************************************/
-octDouble calcSqrErr_scalar(p4est_quadrant_t *q);
+void resetDerivatives(p4est_iter_volume_t *info,
+                      void *user_data);
 
 /***********************************************************
-* refinement_scalarError()
+* divideByVolume()
 *-----------------------------------------------------------
-* Function to calculate the error estimate for the mesh
-* refinement 
+* Function to divide by volume for Green-Gauss gradients.
+*   -> p4est_iter_volume_t callback function
 ***********************************************************/
-int refinement_scalarError(p4est_t          *p4est, 
-                           p4est_topidx_t    which_tree,
-                           p4est_quadrant_t *q);
+void divideByVolume(p4est_iter_volume_info_t *info,
+                    void                     *user_data);
 
 /***********************************************************
-* globalRefinement()
+* computeGradGauss()
 *-----------------------------------------------------------
-* This is the general function to control the refinement
-* of trees.
+* Function to calculate the spatial gradient 
+* based on a Green-Gauss algrithm.
+*   -> p4est_iter_face_t callback function
 ***********************************************************/
-int globalRefinement(p4est_t          *p4est,
-                     p4est_topidx_t    which_tree,
-                     p4est_quadrant_t *q);
+void computeGradGauss(p4est_iter_face_info_t *info,
+                      void                   *user_data);
 
+/***********************************************************
+* computeGradient()
+*-----------------------------------------------------------
+* Function to calculate the spatial gradient within the 
+* domain.
+***********************************************************/
+void computeGradients(p4est_t       *p4est, 
+                      p4est_ghost_t *ghost,
+                      QuadData_t    *ghost_data,
+                      int            varIdx_);
 
-#endif /* SOLVER_REFINE_H */
+#endif /* SOLVER_GRADIENTS_H */

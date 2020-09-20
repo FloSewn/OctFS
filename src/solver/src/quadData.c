@@ -111,12 +111,12 @@ void init_quadFlowData(p4est_t *p4est,
 *         |                 ^
 *         |                 |
 *         |                 |
-*     n[2]|                 | n[1]
+*     n[0]|                 | n[1]
 *         |                 |
 *   y     |                 |
 *   |     v                 |
 *   |    V[0]------------->V[1]
-*   |              n[0]
+*   |              n[2]
 *   ------>x
 *  
 *
@@ -163,17 +163,19 @@ void init_quadGeomData2d(p4est_t *p4est,
                          q->y + length,
                          xyz[3]);
 
+
   /*--------------------------------------------------------
   | Compute quadrant area
   --------------------------------------------------------*/
-  geomData->volume = ( xyz[0][0] * xyz[1][1]
-                     + xyz[1][0] * xyz[2][1]
-                     + xyz[2][0] * xyz[3][1]
-                     + xyz[3][0] * xyz[0][1] )
-                    -( xyz[1][0] * xyz[0][1]
-                     + xyz[2][0] * xyz[1][1]
-                     + xyz[3][0] * xyz[2][1]
-                     + xyz[0][0] * xyz[3][1] ) * 0.5;
+  octDouble vol = ( xyz[0][0] * xyz[1][1]
+                  + xyz[1][0] * xyz[3][1]
+                  + xyz[3][0] * xyz[2][1]
+                  + xyz[2][0] * xyz[0][1] )
+                 -( xyz[0][1] * xyz[1][0]
+                  + xyz[1][1] * xyz[3][0]
+                  + xyz[3][1] * xyz[2][0]
+                  + xyz[2][1] * xyz[0][0] );
+geomData->volume = 0.5 * vol;
 
   /*--------------------------------------------------------
   | Compute quadrant centroid
@@ -186,29 +188,29 @@ void init_quadGeomData2d(p4est_t *p4est,
   /*--------------------------------------------------------
   | Compute quadrant normals
   --------------------------------------------------------*/
-  geomData->normals[0][0] = -xyz[1][1] + xyz[0][1];
-  geomData->normals[0][1] =  xyz[1][0] - xyz[0][0];
+  geomData->normals[0][0] = xyz[0][1] - xyz[2][1];
+  geomData->normals[0][1] = xyz[2][0] - xyz[0][0];
 
-  geomData->normals[1][0] = -xyz[3][1] + xyz[1][1];
-  geomData->normals[1][1] =  xyz[3][0] - xyz[1][0];
+  geomData->normals[1][0] = xyz[3][1] - xyz[1][1];
+  geomData->normals[1][1] = xyz[1][0] - xyz[3][0];
 
-  geomData->normals[2][0] = -xyz[0][1] + xyz[2][1];
-  geomData->normals[2][1] =  xyz[0][0] - xyz[2][0];
+  geomData->normals[2][0] = xyz[1][1] - xyz[0][1];
+  geomData->normals[2][1] = xyz[0][0] - xyz[1][0];
 
-  geomData->normals[3][0] = -xyz[2][1] + xyz[3][1];
-  geomData->normals[3][1] =  xyz[2][0] - xyz[3][0];
+  geomData->normals[3][0] = xyz[2][1] - xyz[3][1];
+  geomData->normals[3][1] = xyz[3][0] - xyz[2][0];
 
   /*--------------------------------------------------------
   | Compute quadrant normal centroids
   --------------------------------------------------------*/
-  geomData->face_centroids[0][0] = 0.5*(xyz[1][0]+xyz[0][0]);
-  geomData->face_centroids[0][1] = 0.5*(xyz[1][1]+xyz[0][1]);
+  geomData->face_centroids[0][0] = 0.5*(xyz[0][0]+xyz[2][0]);
+  geomData->face_centroids[0][1] = 0.5*(xyz[0][1]+xyz[2][1]);
 
   geomData->face_centroids[1][0] = 0.5*(xyz[3][0]+xyz[1][0]);
   geomData->face_centroids[1][1] = 0.5*(xyz[3][1]+xyz[1][1]);
 
-  geomData->face_centroids[2][0] = 0.5*(xyz[0][0]+xyz[2][0]);
-  geomData->face_centroids[2][1] = 0.5*(xyz[0][1]+xyz[2][1]);
+  geomData->face_centroids[2][0] = 0.5*(xyz[1][0]+xyz[0][0]);
+  geomData->face_centroids[2][1] = 0.5*(xyz[1][1]+xyz[0][1]);
 
   geomData->face_centroids[3][0] = 0.5*(xyz[2][0]+xyz[3][0]);
   geomData->face_centroids[3][1] = 0.5*(xyz[2][1]+xyz[3][1]);

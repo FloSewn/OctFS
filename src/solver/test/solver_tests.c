@@ -7,6 +7,7 @@
 #include "solver/quadData.h"
 #include "solver/typedefs.h"
 #include "solver/dataIO.h"
+#include "solver/gradients.h"
 
 #include "solver_tests.h"
 
@@ -43,7 +44,7 @@ void init_function(QuadData_t *quadData)
 
   octDouble arg = -0.5 * r2 / w / w;
 
-  flowData->vars[IS]  = exp(arg);
+  flowData->vars[IS]  = sin(2.0*M_PI*r2/w)*exp(arg);
   flowData->vars[IVX] = 1.0;
   flowData->vars[IVY] = 0.0;
   flowData->vars[IVZ] = 0.0;
@@ -57,6 +58,8 @@ int refine_fn(p4est_t *p4est,
               p4est_topidx_t which_tree,
               p4est_quadrant_t *q)
 {
+  return 0;
+
   SimData_t     *simData  = (SimData_t*) p4est->user_pointer;
   SolverParam_t *solverParam = simData->solverParam;
 
@@ -206,6 +209,13 @@ char *test_solver_init_destroy(int argc, char *argv[])
                                     init_function,
                                     refine_fn,
                                     coarse_fn);
+
+  p4est_ghost_t *ghost = p4est_ghost_new(simData->p4est, P4EST_CONNECT_FULL);
+  QuadData_t *ghost_data = P4EST_ALLOC(QuadData_t,
+                           ghost->ghosts.elem_count);
+  p4est_ghost_exchange_data(simData->p4est, ghost, ghost_data);
+
+  computeGradients(simData->p4est, ghost, ghost_data, IS);
 
   writeSolutionVtk(simData, 0, 0);
 

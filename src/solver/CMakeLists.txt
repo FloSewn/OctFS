@@ -14,6 +14,7 @@ set( SOLVER_MAIN
   ${SOLVER_SRC}/refine.c
   ${SOLVER_SRC}/coarsen.c
   ${SOLVER_SRC}/dataIO.c
+  ${SOLVER_SRC}/gradients.c
   )
 
 ##############################################################

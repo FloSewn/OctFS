@@ -27,6 +27,7 @@
 #include "solver/quadData.h"
 #include "solver/refine.h"
 #include "solver/coarsen.h"
+#include "solver/gradients.h"
 
 #ifndef P4_TO_P8
 #include <p4est_vtk.h>
@@ -95,6 +96,21 @@ SimData_t *init_simData(int          argc,
                                  sizeof(QuadData_t),
                                  init_quadData,
                                  (void *) (simData));
+
+
+  p4est_ghost_t *ghost;
+  QuadData_t    *ghost_data;
+
+  ghost = p4est_ghost_new(simData->p4est, P4EST_CONNECT_FULL);
+  P4EST_ALLOC(QuadData_t,ghost->ghosts.elem_count);
+  p4est_ghost_exchange_data(simData->p4est, ghost, ghost_data);
+
+  /*--------------------------------------------------------
+  | Initial calculation of gradients
+  --------------------------------------------------------*/
+  int idx;
+  for (idx = 0; idx < OCT_MAX_VARS; idx++)
+    computeGradients(simData->p4est, ghost, ghost_data, idx);
 
   /*--------------------------------------------------------
   | Initial refinement 
@@ -179,6 +195,11 @@ SolverParam_t *init_solverParam(void)
   solverParam->recursive = TRUE;
   // Re-Partition on coarsening
   solverParam->partForCoarsen = TRUE;
+
+  // Global refinement error for passive scalar 
+  solverParam->refErr_scalar    = 1.0E-03;
+  // Global refinement error for pressure  
+  solverParam->refErr_pressure  = 1.0E-03;
 
   return solverParam;
 

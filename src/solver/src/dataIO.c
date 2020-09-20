@@ -113,6 +113,7 @@ static void interpSolution(p4est_iter_volume_info_t *info,
   p4est_locidx_t  local_id = info->quadid;  
   QuadData_t     *quadData = (QuadData_t *) q->p.user_data;
   QuadFlowData_t *flowData = &(quadData->flowData);
+  QuadGeomData_t *geomData = &(quadData->geomData);
 
   p4est_tree_t   *tree     = p4est_tree_array_index(p4est->trees, 
                                                     which_tree);
@@ -132,6 +133,8 @@ static void interpSolution(p4est_iter_volume_info_t *info,
   for (i = 0; i < P4EST_CHILDREN; i++) 
   {
     this_u = flowData->vars[io_idx];
+    //this_u = flowData->grad_vars[io_idx][0];
+    //this_u = geomData->volume;
 
     /*------------------------------------------------------
     | loop over the derivative components and 

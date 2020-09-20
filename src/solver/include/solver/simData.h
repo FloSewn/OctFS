@@ -93,6 +93,11 @@ typedef struct SolverParam_t
   // Re-Partition on coarsening
   octBool   partForCoarsen;
 
+  // Global refinement error for passive scalar 
+  octDouble refErr_scalar;
+  // Global refinement error for pressure  
+  octDouble refErr_pressure;
+
 } SolverParam_t;
 
 /***********************************************************
