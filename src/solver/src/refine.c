@@ -51,14 +51,23 @@ octDouble calcSqrErr(p4est_quadrant_t *q, int varIdx)
   octDouble *grad_s = flowData->grad_vars[varIdx];
   octDouble  vol    = geomData->volume;
 
+  octDouble l = (octDouble) P4EST_ROOT_LEN;
+  octDouble h = (octDouble) P4EST_QUADRANT_LEN(q->level) / l;
+  
+  /*--------------------------------------------------------
+  | use approximate derivative to estimate L2 error
+  --------------------------------------------------------*/
   int i;
   octDouble diff2 = 0.;
-  /* use the approximate derivative to estimate the L2 error */
-  for (i = 0; i < P4EST_DIM; i++) {
-    diff2 += grad_s[i] * grad_s[i] * vol;
+  octDouble fac = 1.0 / 12.0;
+
+  for (i = 0; i < P4EST_DIM; i++) 
+  {
+    diff2 += fac * grad_s[i] * grad_s[i] * h * h * vol;
   }
 
   return diff2;
+
 } /* calcSqrErr() */
 
 

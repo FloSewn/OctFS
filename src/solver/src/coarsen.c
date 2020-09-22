@@ -50,11 +50,13 @@ int coarsening_scalarError(p4est_t *p4est,
   QuadData_t     *quadData;
   QuadGeomData_t *geomData;
   QuadFlowData_t *flowData;
+
   int i;
   octDouble var_p = 0.;
   octDouble vol_p = 0.;
 
-  for (i = 0; i < P4EST_CHILDREN; i++) {
+  for (i = 0; i < P4EST_CHILDREN; i++) 
+  {
     quadData = (QuadData_t *) children[i]->p.user_data;
     geomData = &quadData->geomData;
     flowData = &quadData->flowData;
@@ -83,7 +85,6 @@ int coarsening_scalarError(p4est_t *p4est,
 
     if (err2_c > globErr2 * vol)
       return 0;
-
 
     err2 += err2_c;
 

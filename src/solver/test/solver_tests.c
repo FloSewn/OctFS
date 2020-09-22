@@ -44,8 +44,8 @@ void init_function(QuadData_t *quadData)
 
   octDouble arg = -0.5 * r2 / w / w;
 
-  flowData->vars[IS]  = sin(2.0*M_PI*r2/w)*exp(arg);
-  //flowData->vars[IS]  = exp(arg);
+  //flowData->vars[IS]  = sin(2.0*M_PI*r2/w)*exp(arg);
+  flowData->vars[IS]  = exp(arg);
   flowData->vars[IVX] = 1.0;
   flowData->vars[IVY] = 0.0;
   flowData->vars[IVZ] = 0.0;
