@@ -55,7 +55,7 @@
 * contained is returned.
 *
 ***********************************************************/
-octDouble calcSqrErr_scalar(p4est_quadrant_t *q);
+octDouble calcSqrErr(p4est_quadrant_t *q, int varIdx);
 
 /***********************************************************
 * refinement_scalarError()

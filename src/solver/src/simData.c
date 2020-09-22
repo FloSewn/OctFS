@@ -186,7 +186,7 @@ SolverParam_t *init_solverParam(void)
   // Number of quadrants per MPU
   solverParam->nQuadMPU = 0;
   // Minimum level of refinement for initialization
-  solverParam->minRefLvl = 4;
+  solverParam->minRefLvl = 5;
   // Maximum level of refinement
   solverParam->maxRefLvl = 6;
   // Fill uniform
@@ -197,7 +197,7 @@ SolverParam_t *init_solverParam(void)
   solverParam->partForCoarsen = TRUE;
 
   // Global refinement error for passive scalar 
-  solverParam->refErr_scalar    = 1.0E-03;
+  solverParam->refErr_scalar    = 0.1;
   // Global refinement error for pressure  
   solverParam->refErr_pressure  = 1.0E-03;
 

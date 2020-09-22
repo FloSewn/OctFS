@@ -29,12 +29,6 @@
 #include "solver/quadData.h"
 #include "solver/simData.h"
 
-
-/***********************************************************
-* Static variables
-***********************************************************/
-static int varIdx;
-
 /***********************************************************
 * calcSqrErr()
 *-----------------------------------------------------------
@@ -49,7 +43,7 @@ static int varIdx;
 * contained is returned.
 *
 ***********************************************************/
-octDouble calcSqrErr_scalar(p4est_quadrant_t *q)
+octDouble calcSqrErr(p4est_quadrant_t *q, int varIdx)
 {
   QuadData_t *quadData = (QuadData_t *) q->p.user_data;
   QuadFlowData_t *flowData = &quadData->flowData;
@@ -61,11 +55,11 @@ octDouble calcSqrErr_scalar(p4est_quadrant_t *q)
   octDouble diff2 = 0.;
   /* use the approximate derivative to estimate the L2 error */
   for (i = 0; i < P4EST_DIM; i++) {
-    diff2 += grad_s[i] * grad_s[i] * (1. / 12.) * vol;
+    diff2 += grad_s[i] * grad_s[i] * vol;
   }
 
   return diff2;
-}
+} /* calcSqrErr() */
 
 
 /***********************************************************
@@ -81,15 +75,13 @@ int refinement_scalarError(p4est_t          *p4est,
   QuadData_t *quadData = (QuadData_t *) q->p.user_data;
   QuadGeomData_t *geomData = &quadData->geomData;
 
-  SimData_t *simData = (SimData_t *) p4est->user_pointer;
-
-  octDouble globErr   = simData->solverParam->refErr_scalar;
-  octDouble globErr2  = globErr * globErr;
+  SimData_t *simData  = (SimData_t *) p4est->user_pointer;
+  octDouble  globErr  = simData->solverParam->refErr_scalar;
+  octDouble  globErr2 = globErr * globErr;
 
   octDouble vol = geomData->volume; 
 
-  varIdx = IS;
-  octDouble err2 = calcSqrErr_scalar(q);
+  octDouble err2 = calcSqrErr(q, IS);
 
   if (err2 > globErr2 * vol) {
     return 1;
