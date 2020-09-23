@@ -47,26 +47,30 @@ octDouble calcSqrErr(p4est_quadrant_t *q, int varIdx)
 {
   QuadData_t *quadData = (QuadData_t *) q->p.user_data;
   QuadFlowData_t *flowData = &quadData->flowData;
-  QuadGeomData_t *geomData = &quadData->geomData;
+
+
   octDouble *grad_s = flowData->grad_vars[varIdx];
-  octDouble  vol    = geomData->volume;
 
   octDouble l = (octDouble) P4EST_ROOT_LEN;
   octDouble h = (octDouble) P4EST_QUADRANT_LEN(q->level) / l;
+
   
   /*--------------------------------------------------------
-  | use approximate derivative to estimate L2 error
+  | use approximate derivative to estimate L2 error of 
+  | associated energy
   --------------------------------------------------------*/
   int i;
-  octDouble diff2 = 0.;
-  octDouble fac = 1.0 / 12.0;
-
+  octDouble k = 0.0;
+  octDouble v = 1.0;
+  
   for (i = 0; i < P4EST_DIM; i++) 
   {
-    diff2 += fac * grad_s[i] * grad_s[i] * h * h * vol;
+    k += 0.5 * grad_s[i] * h;
+    v *= h;
   }
 
-  return diff2;
+  return v * (k * k * k * k);
+
 
 } /* calcSqrErr() */
 
@@ -92,7 +96,8 @@ int refinement_scalarError(p4est_t          *p4est,
 
   octDouble err2 = calcSqrErr(q, IS);
 
-  if (err2 > globErr2 * vol) {
+  if (err2 > globErr2 * vol) 
+  {
     return 1;
   }
 
