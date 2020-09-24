@@ -131,6 +131,10 @@ typedef struct SimData_t
   /* p4est mesh connectivity */
   p4est_connectivity_t    *conn;
 
+  /* p4est ghost data structure */
+  p4est_ghost_t           *ghost;
+  QuadData_t              *ghostData;
+
 } SimData_t;
 
 /***********************************************************

@@ -98,20 +98,6 @@ SimData_t *init_simData(int          argc,
                                  (void *) (simData));
 
 
-  p4est_ghost_t *ghost;
-  QuadData_t    *ghost_data;
-
-  ghost = p4est_ghost_new(simData->p4est, P4EST_CONNECT_FULL);
-  P4EST_ALLOC(QuadData_t,ghost->ghosts.elem_count);
-  p4est_ghost_exchange_data(simData->p4est, ghost, ghost_data);
-
-  /*--------------------------------------------------------
-  | Initial calculation of gradients
-  --------------------------------------------------------*/
-  int idx;
-  for (idx = 0; idx < OCT_MAX_VARS; idx++)
-    computeGradients(simData->p4est, ghost, ghost_data, idx);
-
   /*--------------------------------------------------------
   | Initial refinement 
   --------------------------------------------------------*/
@@ -137,6 +123,26 @@ SimData_t *init_simData(int          argc,
   p4est_partition(simData->p4est, 
                   solverParam->partForCoarsen, 
                   NULL);
+
+  /*--------------------------------------------------------
+  | Init p4est ghost data structure
+  --------------------------------------------------------*/
+  p4est_ghost_t *ghost;
+  QuadData_t    *ghostData;
+
+  ghost = p4est_ghost_new(simData->p4est, P4EST_CONNECT_FULL);
+  P4EST_ALLOC(QuadData_t, ghost->ghosts.elem_count);
+  p4est_ghost_exchange_data(simData->p4est, ghost, ghostData);
+
+  simData->ghost     = ghost;
+  simData->ghostData = ghostData;
+
+  /*--------------------------------------------------------
+  | Initial calculation of gradients
+  --------------------------------------------------------*
+  int idx;
+  for (idx = 0; idx < OCT_MAX_VARS; idx++)
+    computeGradients(simData, idx); */
 
   return simData;
 

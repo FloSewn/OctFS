@@ -44,7 +44,19 @@
 /***********************************************************
 * Constants  
 ***********************************************************/
-static int varIdx;
+static int gradVarIdx;
+
+
+/***********************************************************
+* setGradVarIdx()
+*-----------------------------------------------------------
+* Function to set the index of the gradient variable to
+* compute.
+***********************************************************/
+static void setGradVarIdx(int varIdx)
+{
+  gradVarIdx = varIdx;
+}
 
 /***********************************************************
 * resetDerivatives()
@@ -64,7 +76,7 @@ void resetDerivatives(p4est_iter_volume_info_t *info,
 
   for (i = 0; i < P4EST_DIM; i++)
   {
-    flowData->grad_vars[varIdx][i] = 0.0;
+    flowData->grad_vars[gradVarIdx][i] = 0.0;
   }
 
 } /* resetDerivatives() */
@@ -90,7 +102,7 @@ void divideByVolume(p4est_iter_volume_info_t *info,
 
   for (i = 0; i < P4EST_DIM; i++)
   {
-    flowData->grad_vars[varIdx][i] *= vol;
+    flowData->grad_vars[gradVarIdx][i] *= vol;
   }
 
 } /* divideByVolume() */
@@ -146,8 +158,8 @@ void computeGradGauss(p4est_iter_face_info_t *info,
       qData = (QuadData_t *) side[1]->is.full.quad->p.user_data;
 
     fData  = &(qData->flowData);
-    var_1  = fData->vars[varIdx];
-    grad_1 = fData->grad_vars[varIdx];
+    var_1  = fData->vars[gradVarIdx];
+    grad_1 = fData->grad_vars[gradVarIdx];
 
     /*-----------------------------------------------------
     | Side 0: -> Set normals
@@ -165,8 +177,8 @@ void computeGradGauss(p4est_iter_face_info_t *info,
       fData = &(qData->flowData);
       gData = &(qData->geomData);
 
-      var_0  = fData->vars[varIdx];
-      grad_0 = fData->grad_vars[varIdx];
+      var_0  = fData->vars[gradVarIdx];
+      grad_0 = fData->grad_vars[gradVarIdx];
 
       const octDouble nx = gData->normals[iface][0];
       const octDouble ny = gData->normals[iface][1];
@@ -213,8 +225,8 @@ void computeGradGauss(p4est_iter_face_info_t *info,
 
     fData = &(qData->flowData);
 
-    var_0  = fData->vars[varIdx];
-    grad_0 = fData->grad_vars[varIdx];
+    var_0  = fData->vars[gradVarIdx];
+    grad_0 = fData->grad_vars[gradVarIdx];
 
     /*-----------------------------------------------------
     | Side 1:
@@ -233,8 +245,8 @@ void computeGradGauss(p4est_iter_face_info_t *info,
       fData = &(qData->flowData);
       gData = &(qData->geomData);
 
-      var_1   = fData->vars[varIdx];
-      grad_1  = fData->grad_vars[varIdx];
+      var_1   = fData->vars[gradVarIdx];
+      grad_1  = fData->grad_vars[gradVarIdx];
 
       const octDouble nx = gData->normals[iface][0];
       const octDouble ny = gData->normals[iface][1];
@@ -283,8 +295,8 @@ void computeGradGauss(p4est_iter_face_info_t *info,
     fData = &(qData->flowData);
     gData = &(qData->geomData);
 
-    var_0  = fData->vars[varIdx];
-    grad_0 = fData->grad_vars[varIdx];
+    var_0  = fData->vars[gradVarIdx];
+    grad_0 = fData->grad_vars[gradVarIdx];
 
     const octDouble nx = gData->normals[iface][0];
     const octDouble ny = gData->normals[iface][1];
@@ -303,8 +315,8 @@ void computeGradGauss(p4est_iter_face_info_t *info,
 
     fData = &(qData->flowData);
 
-    var_1  = fData->vars[varIdx];
-    grad_1 = fData->grad_vars[varIdx];
+    var_1  = fData->vars[gradVarIdx];
+    grad_1 = fData->grad_vars[gradVarIdx];
 
     /*-----------------------------------------------------
     | Add flux contribution
@@ -343,22 +355,23 @@ void computeGradGauss(p4est_iter_face_info_t *info,
 * Function to calculate the spatial gradient within the 
 * domain.
 ***********************************************************/
-void computeGradients(p4est_t       *p4est, 
-                      p4est_ghost_t *ghost,
-                      QuadData_t    *ghost_data,
-                      int            varIdx_)
+void computeGradients(SimData_t *simData, int varIdx)
 {
+  p4est_t       *p4est       = simData->p4est;
+  p4est_ghost_t *ghost       = simData->ghost;
+  QuadData_t    *ghostData   = simData->ghostData;
+  
   /*-------------------------------------------------------
   | Set variable index for gradient calculation
   -------------------------------------------------------*/
-  varIdx = varIdx_;
+  setGradVarIdx(varIdx);
 
   /*-------------------------------------------------------
   | Green-Gauss gradient estimation
   -------------------------------------------------------*/
   p4est_iterate(p4est, 
                 ghost, 
-                (void *) ghost_data,
+                (void *) ghostData,
                 resetDerivatives,  // cell callback
                 computeGradGauss,   // face callback
 #ifdef P4_TO_P8
@@ -371,7 +384,7 @@ void computeGradients(p4est_t       *p4est,
   -------------------------------------------------------*/
   p4est_iterate(p4est, 
                 ghost, 
-                (void *) ghost_data,
+                (void *) ghostData,
                 divideByVolume,  // cell callback
                 NULL,     // face callback
 #ifdef P4_TO_P8

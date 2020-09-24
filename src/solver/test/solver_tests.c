@@ -100,9 +100,6 @@ int coarse_fn(p4est_t *p4est,
 
     if (fabs(xc[0]-0.5) >= 0.25 && fabs(xc[1]-0.5) >= 0.25)
     {
-      printf("Coarsening of Quad (%.3f, %.3f)\n",
-          xc[0], xc[1]);
-
       return 1;
     }
   }
@@ -211,12 +208,7 @@ char *test_solver_init_destroy(int argc, char *argv[])
                                     refine_fn,
                                     coarse_fn);
 
-  p4est_ghost_t *ghost = p4est_ghost_new(simData->p4est, P4EST_CONNECT_FULL);
-  QuadData_t *ghost_data = P4EST_ALLOC(QuadData_t,
-                           ghost->ghosts.elem_count);
-  p4est_ghost_exchange_data(simData->p4est, ghost, ghost_data);
-
-  computeGradients(simData->p4est, ghost, ghost_data, IS);
+  //computeGradients(simData, IS);
 
   writeSolutionVtk(simData, 0, 0);
 

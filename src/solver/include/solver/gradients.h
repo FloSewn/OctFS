@@ -43,6 +43,14 @@
 #include "solver/quadData.h"
 
 /***********************************************************
+* setGradVarIdx()
+*-----------------------------------------------------------
+* Function to set the index of the gradient variable to
+* compute.
+***********************************************************/
+static void setGradVarIdx(int varIdx);
+
+/***********************************************************
 * resetDerivatives()
 *-----------------------------------------------------------
 * Function to reset the derivatives of a quadrant 
@@ -76,9 +84,6 @@ void computeGradGauss(p4est_iter_face_info_t *info,
 * Function to calculate the spatial gradient within the 
 * domain.
 ***********************************************************/
-void computeGradients(p4est_t       *p4est, 
-                      p4est_ghost_t *ghost,
-                      QuadData_t    *ghost_data,
-                      int            varIdx_);
+void computeGradients(SimData_t *simData, int varIdx);
 
 #endif /* SOLVER_GRADIENTS_H */
