@@ -23,12 +23,9 @@
 ************************************************************/
 void init_function(QuadData_t *quadData)
 {
-  QuadFlowData_t *flowData = &(quadData->flowData);
-  QuadGeomData_t *geomData = &(quadData->geomData);
-
   int i;
 
-  octDouble *xc = geomData->centroid;
+  octDouble *xc = quadData->centroid;
 
   octDouble c[3] = {0.5, 0.5, 0.5};
   octDouble w    = 0.2;
@@ -44,11 +41,11 @@ void init_function(QuadData_t *quadData)
 
   octDouble arg = -0.5 * r2 / w / w;
 
-  //flowData->vars[IS]  = sin(2.0*M_PI*r2/w)*exp(arg);
-  flowData->vars[IS]  = exp(arg);
-  flowData->vars[IVX] = 1.0;
-  flowData->vars[IVY] = 0.0;
-  flowData->vars[IVZ] = 0.0;
+  //quadData->vars[IS]  = sin(2.0*M_PI*r2/w)*exp(arg);
+  quadData->vars[IS]  = exp(arg);
+  quadData->vars[IVX] = 1.0;
+  quadData->vars[IVY] = 0.0;
+  quadData->vars[IVZ] = 0.0;
 
 } /* init_function() */
 
@@ -65,8 +62,7 @@ int refine_fn(p4est_t *p4est,
   SolverParam_t *solverParam = simData->solverParam;
 
   QuadData_t     *quadData = (QuadData_t *) q->p.user_data;
-  QuadGeomData_t *geomData = &(quadData->geomData);
-  octDouble      *xc       = geomData->centroid;
+  octDouble      *xc       = quadData->centroid;
 
   if (q->level == solverParam->maxRefLvl)
     return 0;
@@ -85,7 +81,6 @@ int coarse_fn(p4est_t *p4est,
               p4est_quadrant_t *children[])
 {
   QuadData_t     *quadData;
-  QuadGeomData_t *geomData;
   octDouble      *xc;
   p4est_quadrant_t *q;
 
@@ -95,8 +90,7 @@ int coarse_fn(p4est_t *p4est,
   {
     q        = children[i];
     quadData = (QuadData_t *) q->p.user_data;
-    geomData = &(quadData->geomData);
-    xc       = geomData->centroid;
+    xc       = quadData->centroid;
 
     if (fabs(xc[0]-0.5) >= 0.25 && fabs(xc[1]-0.5) >= 0.25)
     {
@@ -208,12 +202,13 @@ char *test_solver_init_destroy(int argc, char *argv[])
                                     refine_fn,
                                     coarse_fn);
 
-  //computeGradients(simData, IS);
+  computeGradients(simData, IS);
 
   writeSolutionVtk(simData, 0, 0);
 
   destroy_simData(simData);
 
+  return NULL;
 
 } /* test_solver_init_destroy() */
 

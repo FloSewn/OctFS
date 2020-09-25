@@ -51,6 +51,9 @@ if( CMAKE_BUILD_TYPE STREQUAL "Debug" )
   # disable optimization
   string( APPEND MY_CMAKE_C_FLAGS " -pg" )
 
+  # enable warnings
+  string( APPEND MY_CMAKE_C_FLAGS " -Wall" )
+
   if( CMAKE_C_COMPILER_ID STREQUAL "GNU" )
    
     # detect unused variables

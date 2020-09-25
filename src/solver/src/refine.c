@@ -46,10 +46,9 @@
 octDouble calcSqrErr(p4est_quadrant_t *q, int varIdx)
 {
   QuadData_t *quadData = (QuadData_t *) q->p.user_data;
-  QuadFlowData_t *flowData = &quadData->flowData;
 
 
-  octDouble *grad_s = flowData->grad_vars[varIdx];
+  octDouble *grad_s = quadData->grad_vars[varIdx];
 
   octDouble l = (octDouble) P4EST_ROOT_LEN;
   octDouble h = (octDouble) P4EST_QUADRANT_LEN(q->level) / l;
@@ -86,13 +85,12 @@ int refinement_scalarError(p4est_t          *p4est,
                            p4est_quadrant_t *q)
 {
   QuadData_t *quadData = (QuadData_t *) q->p.user_data;
-  QuadGeomData_t *geomData = &quadData->geomData;
 
   SimData_t *simData  = (SimData_t *) p4est->user_pointer;
   octDouble  globErr  = simData->solverParam->refErr_scalar;
   octDouble  globErr2 = globErr * globErr;
 
-  octDouble vol = geomData->volume; 
+  octDouble vol = quadData->volume; 
 
   octDouble err2 = calcSqrErr(q, IS);
 

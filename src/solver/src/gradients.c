@@ -44,7 +44,7 @@
 /***********************************************************
 * Constants  
 ***********************************************************/
-static int gradVarIdx;
+static int gradVarIdx = -1;
 
 
 /***********************************************************
@@ -70,13 +70,12 @@ void resetDerivatives(p4est_iter_volume_info_t *info,
   p4est_quadrant_t   *q = info->quad;
 
   QuadData_t     *quadData = (QuadData_t *) q->p.user_data;
-  QuadFlowData_t *flowData = &(quadData->flowData);
 
   int i;
 
   for (i = 0; i < P4EST_DIM; i++)
   {
-    flowData->grad_vars[gradVarIdx][i] = 0.0;
+    quadData->grad_vars[gradVarIdx][i] = 0.0;
   }
 
 } /* resetDerivatives() */
@@ -93,16 +92,14 @@ void divideByVolume(p4est_iter_volume_info_t *info,
   p4est_quadrant_t   *q = info->quad;
 
   QuadData_t     *quadData = (QuadData_t *) q->p.user_data;
-  QuadFlowData_t *flowData = &(quadData->flowData);
-  QuadGeomData_t *geomData = &(quadData->geomData);
 
   int i;
 
-  octDouble vol = 1.0 / geomData->volume;
+  octDouble vol = 1.0 / quadData->volume;
 
   for (i = 0; i < P4EST_DIM; i++)
   {
-    flowData->grad_vars[gradVarIdx][i] *= vol;
+    quadData->grad_vars[gradVarIdx][i] *= vol;
   }
 
 } /* divideByVolume() */
@@ -117,17 +114,15 @@ void divideByVolume(p4est_iter_volume_info_t *info,
 void computeGradGauss(p4est_iter_face_info_t *info,
                       void                   *user_data)
 {
-  int i, j;
+  int i;
 
   sc_array_t *sides = &(info->sides);
   P4EST_ASSERT(sides->elem_count == 2);
 
+  p4est_quadrant_t *quad = NULL;
+
   QuadData_t      *ghostData = (QuadData_t *) user_data;
   QuadData_t      *qData;
-  QuadFlowData_t  *fData;
-  QuadGeomData_t  *gData;
-
-  p4est_quadrant_t *quad;
 
   octDouble  var_0, var_1;
   octDouble  *grad_0, *grad_1;
@@ -157,9 +152,8 @@ void computeGradGauss(p4est_iter_face_info_t *info,
     else
       qData = (QuadData_t *) side[1]->is.full.quad->p.user_data;
 
-    fData  = &(qData->flowData);
-    var_1  = fData->vars[gradVarIdx];
-    grad_1 = fData->grad_vars[gradVarIdx];
+    var_1  = qData->vars[gradVarIdx];
+    grad_1 = qData->grad_vars[gradVarIdx];
 
     /*-----------------------------------------------------
     | Side 0: -> Set normals
@@ -174,16 +168,13 @@ void computeGradGauss(p4est_iter_face_info_t *info,
       else
         qData = (QuadData_t*) side[0]->is.hanging.quad[i]->p.user_data;
 
-      fData = &(qData->flowData);
-      gData = &(qData->geomData);
+      var_0  = qData->vars[gradVarIdx];
+      grad_0 = qData->grad_vars[gradVarIdx];
 
-      var_0  = fData->vars[gradVarIdx];
-      grad_0 = fData->grad_vars[gradVarIdx];
-
-      const octDouble nx = gData->normals[iface][0];
-      const octDouble ny = gData->normals[iface][1];
+      const octDouble nx = qData->normals[iface][0];
+      const octDouble ny = qData->normals[iface][1];
 #ifdef P4_TO_P8
-      const octDouble nz = gData->normals[iface][2];
+      const octDouble nz = qData->normals[iface][2];
 #endif
 
       /*---------------------------------------------------
@@ -223,10 +214,9 @@ void computeGradGauss(p4est_iter_face_info_t *info,
     else
       qData = (QuadData_t *) side[0]->is.full.quad->p.user_data;
 
-    fData = &(qData->flowData);
 
-    var_0  = fData->vars[gradVarIdx];
-    grad_0 = fData->grad_vars[gradVarIdx];
+    var_0  = qData->vars[gradVarIdx];
+    grad_0 = qData->grad_vars[gradVarIdx];
 
     /*-----------------------------------------------------
     | Side 1:
@@ -242,16 +232,13 @@ void computeGradGauss(p4est_iter_face_info_t *info,
       else
         qData = (QuadData_t*) side[1]->is.hanging.quad[i]->p.user_data;
 
-      fData = &(qData->flowData);
-      gData = &(qData->geomData);
+      var_1   = qData->vars[gradVarIdx];
+      grad_1  = qData->grad_vars[gradVarIdx];
 
-      var_1   = fData->vars[gradVarIdx];
-      grad_1  = fData->grad_vars[gradVarIdx];
-
-      const octDouble nx = gData->normals[iface][0];
-      const octDouble ny = gData->normals[iface][1];
+      const octDouble nx = qData->normals[iface][0];
+      const octDouble ny = qData->normals[iface][1];
 #ifdef P4_TO_P8
-      const octDouble nz = gData->normals[iface][2];
+      const octDouble nz = qData->normals[iface][2];
 #endif
 
       /*---------------------------------------------------
@@ -292,15 +279,14 @@ void computeGradGauss(p4est_iter_face_info_t *info,
     else
       qData = (QuadData_t *) side[0]->is.full.quad->p.user_data;
 
-    fData = &(qData->flowData);
-    gData = &(qData->geomData);
+    var_0  = qData->vars[gradVarIdx];
+    grad_0 = qData->grad_vars[gradVarIdx];
 
-    var_0  = fData->vars[gradVarIdx];
-    grad_0 = fData->grad_vars[gradVarIdx];
-
-    const octDouble nx = gData->normals[iface][0];
-    const octDouble ny = gData->normals[iface][1];
-    const octDouble nz = gData->normals[iface][2];
+    const octDouble nx = qData->normals[iface][0];
+    const octDouble ny = qData->normals[iface][1];
+#ifdef P4_TO_P8
+    const octDouble nz = qData->normals[iface][2];
+#endif
 
     /*-----------------------------------------------------
     | Side 1:
@@ -313,10 +299,9 @@ void computeGradGauss(p4est_iter_face_info_t *info,
     else
       qData = (QuadData_t *) side[1]->is.full.quad->p.user_data;
 
-    fData = &(qData->flowData);
 
-    var_1  = fData->vars[gradVarIdx];
-    grad_1 = fData->grad_vars[gradVarIdx];
+    var_1  = qData->vars[gradVarIdx];
+    grad_1 = qData->grad_vars[gradVarIdx];
 
     /*-----------------------------------------------------
     | Add flux contribution

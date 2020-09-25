@@ -1,0 +1,48 @@
+
+include /home/florian/Programs/p4est-2.2/Makefile.p4est.mk
+
+CC			 := mpicc
+CFLAGS   := -g -O2 -Wall -Wextra -Isrc -rdynamic -DNDEBUG $(OPTFLAGS)
+LDFLAGS  := -ldl -L/home/florian/Programs/p4est-2.2/local/lib -l:libp4est.a -l:libsc.a -llapack -lcblas -lf77blas -latlas -lz -lm
+PREFIX?  := /usr/local
+BUILD    := ./build
+OBJ_DIR  := $(BUILD)/objects
+APP_DIR  := ./bin
+TARGET   := solver_test
+INCLUDE  := -Isrc/solver/include/ -Isrc/aux/include/ -I/home/florian/Programs/p4est-2.2/src/ -I/home/florian/Programs/p4est-2.2/sc/src
+
+SRC			 := \
+			$(wildcard src/solver/src/*.c) \
+			$(wildcard src/solver/test/*.c) \
+
+OBJECTS  := $(SRC:%.c=$(OBJ_DIR)/%.o)
+
+all: build $(APP_DIR)/$(TARGET)
+
+
+$(OBJ_DIR)/%.o: %.c
+	@mkdir -p $(@D)
+	$(CC) $(CFLAGS) $(INCLUDE) -o $@ -c $<
+
+$(APP_DIR)/$(TARGET): $(OBJECTS)
+	@mkdir -p $(@D)
+	$(CC) $(CFLAGS) $(INCLUDE) -o $(APP_DIR)/$(TARGET) $(OBJECTS) $(LDFLAGS)
+
+
+.PHONY: all build clean debug release
+
+build:
+	@mkdir -p $(APP_DIR)
+	@mkdir -p $(OBJ_DIR)
+
+debug: CFLAGS += -DDEBUG -g
+debug: all
+
+release: CFLAGS += -O2
+release: all
+
+clean:
+	-@rm -rvf $(OBJ_DIR)/*
+	-@rm -rvf $(APP_DIR)/*
+
+

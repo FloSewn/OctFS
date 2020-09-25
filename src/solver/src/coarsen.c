@@ -48,8 +48,6 @@ int coarsening_scalarError(p4est_t *p4est,
   | Compute average of children values
   ---------------------------------------------------------*/
   QuadData_t     *quadData;
-  QuadGeomData_t *geomData;
-  QuadFlowData_t *flowData;
 
   int i;
   octDouble var_p = 0.;
@@ -58,11 +56,9 @@ int coarsening_scalarError(p4est_t *p4est,
   for (i = 0; i < P4EST_CHILDREN; i++) 
   {
     quadData = (QuadData_t *) children[i]->p.user_data;
-    geomData = &quadData->geomData;
-    flowData = &quadData->flowData;
 
-    const octDouble vol = geomData->volume;
-    const octDouble var = flowData->vars[IS];
+    const octDouble vol = quadData->volume;
+    const octDouble var = quadData->vars[IS];
 
     var_p += vol * var;
     vol_p += vol;
@@ -76,19 +72,17 @@ int coarsening_scalarError(p4est_t *p4est,
   for (i = 0; i < P4EST_CHILDREN; i++) 
   {
     quadData = (QuadData_t *) children[i]->p.user_data;
-    geomData = &quadData->geomData;
-    flowData = &quadData->flowData;
 
     const octDouble err2_c = calcSqrErr(children[i], IS);
 
-    const octDouble vol = geomData->volume;
+    const octDouble vol = quadData->volume;
 
     if (err2_c > globErr2 * vol)
       return 0;
 
     err2 += err2_c;
 
-    const octDouble var = flowData->vars[IS];
+    const octDouble var = quadData->vars[IS];
 
     const octDouble diff = var_p - var;
     const octDouble diff2 = diff * diff;

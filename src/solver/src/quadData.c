@@ -51,17 +51,14 @@ void init_quadData(p4est_t *p4est,
   SimData_t  *simData  = (SimData_t *) p4est->user_pointer;
   QuadData_t *quadData = (QuadData_t *) q->p.user_data;
 
-  QuadGeomData_t *geomData = &(quadData->geomData);
-  QuadFlowData_t *flowData = &(quadData->flowData);
-
 #ifdef P4_TO_P8
-  init_quadGeomData3d(p4est, which_tree, q, geomData);
+  init_quadGeomData3d(p4est, which_tree, q, quadData);
 #else
-  init_quadGeomData2d(p4est, which_tree, q, geomData);
+  init_quadGeomData2d(p4est, which_tree, q, quadData);
 #endif
 
 
-  init_quadFlowData(p4est, which_tree, q, flowData);
+  init_quadFlowData(p4est, which_tree, q, quadData);
 
   /*--------------------------------------------------------
   | Apply user-defined initialization function 
@@ -80,21 +77,21 @@ void init_quadData(p4est_t *p4est,
 *-----------------------------------------------------------
 * Initializes the quad flow data structure
 ***********************************************************/
-void init_quadFlowData(p4est_t *p4est,
-                       p4est_topidx_t which_tree,
+void init_quadFlowData(p4est_t          *p4est,
+                       p4est_topidx_t    which_tree,
                        p4est_quadrant_t *q, 
-                       QuadFlowData_t *flowData)
+                       QuadData_t       *quadData)
 {
   int i,j;
 
   for (i = 0; i < OCT_MAX_VARS; i++)
   {
-    flowData->vars[i]     = 0.0;
-    flowData->vars_buf[i] = 0.0;
+    quadData->vars[i]     = 0.0;
+    quadData->vars_buf[i] = 0.0;
 
     for (j = 0; j < P4EST_DIM; j++)
     {
-      flowData->grad_vars[i][j] = 0.0;
+      quadData->grad_vars[i][j] = 0.0;
     }
   }
 
@@ -121,19 +118,17 @@ void init_quadFlowData(p4est_t *p4est,
 *  
 *
 ***********************************************************/
-void init_quadGeomData2d(p4est_t *p4est,
-                         p4est_topidx_t which_tree,
+void init_quadGeomData2d(p4est_t          *p4est,
+                         p4est_topidx_t    which_tree,
                          p4est_quadrant_t *q, 
-                         QuadGeomData_t *geomData)
+                         QuadData_t       *quadData)
 {
-  int i,j;
-
   /*--------------------------------------------------------
   | Get 2D vertex coordinates 
   --------------------------------------------------------*/
   p4est_qcoord_t length = P4EST_QUADRANT_LEN(q->level);
 
-  octDouble (*xyz)[2] = geomData->xyz;
+  octDouble (*xyz)[2] = quadData->xyz;
 
   // V[0]
   p4est_qcoord_to_vertex(p4est->connectivity,
@@ -175,45 +170,45 @@ void init_quadGeomData2d(p4est_t *p4est,
                   + xyz[1][1] * xyz[3][0]
                   + xyz[3][1] * xyz[2][0]
                   + xyz[2][1] * xyz[0][0] );
-geomData->volume = 0.5 * vol;
+  quadData->volume = 0.5 * vol;
 
   /*--------------------------------------------------------
   | Compute quadrant centroid
   --------------------------------------------------------*/
-  geomData->centroid[0] = 0.25 * ( xyz[0][0] + xyz[1][0]
+  quadData->centroid[0] = 0.25 * ( xyz[0][0] + xyz[1][0]
                                  + xyz[2][0] + xyz[3][0] );
-  geomData->centroid[1] = 0.25 * ( xyz[0][1] + xyz[1][1]
+  quadData->centroid[1] = 0.25 * ( xyz[0][1] + xyz[1][1]
                                  + xyz[2][1] + xyz[3][1] );
 
   /*--------------------------------------------------------
   | Compute quadrant normals
   --------------------------------------------------------*/
-  geomData->normals[0][0] = xyz[0][1] - xyz[2][1];
-  geomData->normals[0][1] = xyz[2][0] - xyz[0][0];
+  quadData->normals[0][0] = xyz[0][1] - xyz[2][1];
+  quadData->normals[0][1] = xyz[2][0] - xyz[0][0];
 
-  geomData->normals[1][0] = xyz[3][1] - xyz[1][1];
-  geomData->normals[1][1] = xyz[1][0] - xyz[3][0];
+  quadData->normals[1][0] = xyz[3][1] - xyz[1][1];
+  quadData->normals[1][1] = xyz[1][0] - xyz[3][0];
 
-  geomData->normals[2][0] = xyz[1][1] - xyz[0][1];
-  geomData->normals[2][1] = xyz[0][0] - xyz[1][0];
+  quadData->normals[2][0] = xyz[1][1] - xyz[0][1];
+  quadData->normals[2][1] = xyz[0][0] - xyz[1][0];
 
-  geomData->normals[3][0] = xyz[2][1] - xyz[3][1];
-  geomData->normals[3][1] = xyz[3][0] - xyz[2][0];
+  quadData->normals[3][0] = xyz[2][1] - xyz[3][1];
+  quadData->normals[3][1] = xyz[3][0] - xyz[2][0];
 
   /*--------------------------------------------------------
   | Compute quadrant normal centroids
   --------------------------------------------------------*/
-  geomData->face_centroids[0][0] = 0.5*(xyz[0][0]+xyz[2][0]);
-  geomData->face_centroids[0][1] = 0.5*(xyz[0][1]+xyz[2][1]);
+  quadData->face_centroids[0][0] = 0.5*(xyz[0][0]+xyz[2][0]);
+  quadData->face_centroids[0][1] = 0.5*(xyz[0][1]+xyz[2][1]);
 
-  geomData->face_centroids[1][0] = 0.5*(xyz[3][0]+xyz[1][0]);
-  geomData->face_centroids[1][1] = 0.5*(xyz[3][1]+xyz[1][1]);
+  quadData->face_centroids[1][0] = 0.5*(xyz[3][0]+xyz[1][0]);
+  quadData->face_centroids[1][1] = 0.5*(xyz[3][1]+xyz[1][1]);
 
-  geomData->face_centroids[2][0] = 0.5*(xyz[1][0]+xyz[0][0]);
-  geomData->face_centroids[2][1] = 0.5*(xyz[1][1]+xyz[0][1]);
+  quadData->face_centroids[2][0] = 0.5*(xyz[1][0]+xyz[0][0]);
+  quadData->face_centroids[2][1] = 0.5*(xyz[1][1]+xyz[0][1]);
 
-  geomData->face_centroids[3][0] = 0.5*(xyz[2][0]+xyz[3][0]);
-  geomData->face_centroids[3][1] = 0.5*(xyz[2][1]+xyz[3][1]);
+  quadData->face_centroids[3][0] = 0.5*(xyz[2][0]+xyz[3][0]);
+  quadData->face_centroids[3][1] = 0.5*(xyz[2][1]+xyz[3][1]);
 
 
 } /* init_quadGeomData() */

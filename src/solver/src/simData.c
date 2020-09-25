@@ -82,7 +82,6 @@ SimData_t *init_simData(int          argc,
   | create p4est structure
   --------------------------------------------------------*/
   SolverParam_t *solverParam = simData->solverParam;
-  SimParam_t    *simParam    = simData->simParam;
 
   p4est_init(NULL, SC_LP_PRODUCTION);
   P4EST_GLOBAL_PRODUCTIONF(
@@ -97,6 +96,24 @@ SimData_t *init_simData(int          argc,
                                  init_quadData,
                                  (void *) (simData));
 
+  /*--------------------------------------------------------
+  | Init p4est ghost data structure
+  --------------------------------------------------------*/
+  QuadData_t    *ghostData;
+  p4est_ghost_t *ghost;
+  ghost = p4est_ghost_new(simData->p4est, P4EST_CONNECT_FULL);
+  ghostData = P4EST_ALLOC(QuadData_t, ghost->ghosts.elem_count);
+  p4est_ghost_exchange_data(simData->p4est, ghost, ghostData);
+
+  simData->ghost     = ghost;
+  simData->ghostData = ghostData;
+
+  /*--------------------------------------------------------
+  | Initial calculation of gradients
+  --------------------------------------------------------*/
+  int idx;
+  for (idx = 0; idx < OCT_MAX_VARS; idx++)
+    computeGradients(simData, idx); 
 
   /*--------------------------------------------------------
   | Initial refinement 
@@ -124,25 +141,6 @@ SimData_t *init_simData(int          argc,
                   solverParam->partForCoarsen, 
                   NULL);
 
-  /*--------------------------------------------------------
-  | Init p4est ghost data structure
-  --------------------------------------------------------*/
-  p4est_ghost_t *ghost;
-  QuadData_t    *ghostData;
-
-  ghost = p4est_ghost_new(simData->p4est, P4EST_CONNECT_FULL);
-  P4EST_ALLOC(QuadData_t, ghost->ghosts.elem_count);
-  p4est_ghost_exchange_data(simData->p4est, ghost, ghostData);
-
-  simData->ghost     = ghost;
-  simData->ghostData = ghostData;
-
-  /*--------------------------------------------------------
-  | Initial calculation of gradients
-  --------------------------------------------------------*
-  int idx;
-  for (idx = 0; idx < OCT_MAX_VARS; idx++)
-    computeGradients(simData, idx); */
 
   return simData;
 
@@ -218,9 +216,12 @@ SolverParam_t *init_solverParam(void)
 ***********************************************************/
 MPIParam_t *init_mpiParam(int argc, char *argv[])
 {
-  MPIParam_t *mpiParam = malloc(sizeof(MPIParam_t));
+  MPIParam_t *mpiParam = NULL;
+  mpiParam             = malloc(sizeof(MPIParam_t));
 
-  int mpi_return = sc_MPI_Init(&argc, &argv);
+  int mpi_return;
+  
+  mpi_return = sc_MPI_Init(&argc, &argv);
   SC_CHECK_MPI(mpi_return);
 
   mpiParam->mpiComm = sc_MPI_COMM_WORLD;

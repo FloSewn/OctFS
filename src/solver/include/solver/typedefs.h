@@ -69,8 +69,6 @@ typedef struct SimData_t        SimData_t;
 /***********************************************************
 * Typedefs for quadData.h
 ***********************************************************/
-typedef struct QuadGeomData_t   QuadGeomData_t;
-typedef struct QuadFlowData_t   QuadFlowData_t;
 typedef struct QuadData_t       QuadData_t;
 
 /***********************************************************

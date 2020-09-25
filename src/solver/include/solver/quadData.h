@@ -42,55 +42,38 @@
 #include "solver/util.h"
 
 /***********************************************************
-* Structure containing geometric properties for every quad
-***********************************************************/
-typedef struct QuadGeomData_t 
-{
-  /* Vertices */
-#ifdef P4_TO_P8
-  octDouble xyz[8][3];
-#else
-  octDouble xyz[4][2];
-#endif
-
-  /* Octahedron centroid */
-  octDouble centroid[P4EST_DIM];
-  /* Octahedron volume */
-  octDouble volume;
-  /* Octahedron face normals */
-  octDouble normals[2*P4EST_DIM][P4EST_DIM];
-  /* Octahedron face centroids */
-  octDouble face_centroids[2*P4EST_DIM][P4EST_DIM];
-
-} QuadGeomData_t;
-
-
-/***********************************************************
-* Structure containing the flow field variable data 
-* for every quad
-***********************************************************/
-typedef struct QuadFlowData_t
-{
-  /* State variables */
-  octDouble vars[OCT_MAX_VARS];
-
-  /* State variable gradients */
-  octDouble grad_vars[OCT_MAX_VARS][P4EST_DIM];
-
-  /* State variable  buffers */
-  octDouble vars_buf[OCT_MAX_VARS];
-
-} QuadFlowData_t;
-
-
-/***********************************************************
 * Structure containing properties for every quad
 *   > Accessed through q->p.user_data
 ***********************************************************/
 typedef struct QuadData_t
 {
-  QuadGeomData_t geomData;
-  QuadFlowData_t flowData;
+  /*--------------------------------------------------------
+  | Quad geometry data
+  --------------------------------------------------------*/
+  // Vertices 
+#ifdef P4_TO_P8
+  octDouble xyz[8][3];
+#else
+  octDouble xyz[4][2];
+#endif
+  // Octahedron centroid 
+  octDouble centroid[P4EST_DIM];
+  // Octahedron volume 
+  octDouble volume;
+  // Octahedron face normals 
+  octDouble normals[2*P4EST_DIM][P4EST_DIM];
+  // Octahedron face centroids 
+  octDouble face_centroids[2*P4EST_DIM][P4EST_DIM];
+
+  /*--------------------------------------------------------
+  | Quad flow data
+  --------------------------------------------------------*/
+  // State variables 
+  octDouble vars[OCT_MAX_VARS];
+  // State variable gradients 
+  octDouble grad_vars[OCT_MAX_VARS][P4EST_DIM];
+  // State variable  buffers 
+  octDouble vars_buf[OCT_MAX_VARS];
 
 } QuadData_t;
 
@@ -108,10 +91,10 @@ void init_quadData(p4est_t *p4est,
 *-----------------------------------------------------------
 * Initializes the quad flow data structure
 ***********************************************************/
-void init_quadFlowData(p4est_t *p4est,
-                       p4est_topidx_t which_tree,
+void init_quadFlowData(p4est_t          *p4est,
+                       p4est_topidx_t    which_tree,
                        p4est_quadrant_t *q, 
-                       QuadFlowData_t *flowData);
+                       QuadData_t       *flowData);
 
 /***********************************************************
 * init_quadGeomData3d()
@@ -121,7 +104,7 @@ void init_quadFlowData(p4est_t *p4est,
 void init_quadGeomData3d(p4est_t          *p4est,
                          p4est_topidx_t    which_tree,
                          p4est_quadrant_t *q, 
-                         QuadGeomData_t   *geomData);
+                         QuadData_t       *quadData);
 
 /***********************************************************
 * init_quadGeomData2d()
@@ -131,7 +114,7 @@ void init_quadGeomData3d(p4est_t          *p4est,
 void init_quadGeomData2d(p4est_t          *p4est,
                          p4est_topidx_t    which_tree,
                          p4est_quadrant_t *q, 
-                         QuadGeomData_t   *geomData);
+                         QuadData_t       *quadData);
 
 
 #endif /* SOLVER_QUADDATA_H */

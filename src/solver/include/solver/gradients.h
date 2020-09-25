@@ -43,14 +43,6 @@
 #include "solver/quadData.h"
 
 /***********************************************************
-* setGradVarIdx()
-*-----------------------------------------------------------
-* Function to set the index of the gradient variable to
-* compute.
-***********************************************************/
-static void setGradVarIdx(int varIdx);
-
-/***********************************************************
 * resetDerivatives()
 *-----------------------------------------------------------
 * Function to reset the derivatives of a quadrant 
