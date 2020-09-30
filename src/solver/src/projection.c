@@ -23,27 +23,37 @@
 * Free Software Foundation, Inc., 51 Franklin Street, 
 * Fifth Floor, Boston, MA 02110-1301, USA.
 */
-#ifndef SOLVER_SOLVER_H_INCLUDED
-#define SOLVER_SOLVER_H_INCLUDED
+#include "solver/projection.h"
+#include "solver/massflux.h"
+#include "solver/typedefs.h"
+#include "solver/util.h"
+#include "solver/quadData.h"
+#include "solver/simData.h"
+#include "solver/util.h"
+#include "solver/solveTranEq.h"
+#include "aux/dbg.h"
 
 #ifndef P4_TO_P8
 #include <p4est_bits.h>
-#include <p4est_vtk.h>
+#include <p4est_extended.h>
 #include <p4est_iterate.h>
 #else
 #include <p8est_bits.h>
-#include <p8est_vtk.h>
+#include <p8est_extended.h>
+#include <p8est_iterate.h>
 #endif
 
-#include "solver/simData.h"
-
 /***********************************************************
-* solverRun()
+* doProjectionStep()
 *-----------------------------------------------------------
-* Perform a transient simulation with initialized 
-* simulation data
+* Perform a single projection step to evolve the solution
+* in time.
 ***********************************************************/
-void solverRun(SimData_t *simData);
+void doProjectionStep(SimData_t *simData)
+{
+  /*--------------------------------------------------------
+  | Solve momentum equation
+  --------------------------------------------------------*/
+  solveTranEq(simData, IS);
 
-
-#endif /* SOLVER_SOLVER_H_INCLUDED */
+} /* doProjectionStep() */

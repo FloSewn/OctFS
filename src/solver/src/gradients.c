@@ -116,20 +116,18 @@ void computeGradGauss(p4est_iter_face_info_t *info,
 {
   int i;
 
+  QuadData_t      *qData;
+  QuadData_t      *ghostData = (QuadData_t *) user_data;
+
   sc_array_t *sides = &(info->sides);
   P4EST_ASSERT(sides->elem_count == 2);
 
-  p4est_quadrant_t *quad = NULL;
-
-  QuadData_t      *ghostData = (QuadData_t *) user_data;
-  QuadData_t      *qData;
 
   octDouble  var_0, var_1;
   octDouble  *grad_0, *grad_1;
 
   /*-------------------------------------------------------
-  | No boundaries implemented yet -> every face has two 
-  | sides
+  | every face has two sides
   |------------------------------------------------------*/
   p4est_iter_face_side_t *side[2];
   side[0] = p4est_iter_fside_array_index_int(sides, 0);
@@ -143,10 +141,8 @@ void computeGradGauss(p4est_iter_face_info_t *info,
     const int iface = side[0]->face;
 
     /*-----------------------------------------------------
-    | Side 1: Normal face 
+    | Side 1: Large face 
     |----------------------------------------------------*/
-    quad = side[1]->is.full.quad;  
-
     if (side[1]->is.full.is_ghost)
       qData = &ghostData[side[1]->is.full.quadid];
     else
@@ -161,8 +157,6 @@ void computeGradGauss(p4est_iter_face_info_t *info,
     |----------------------------------------------------*/
     for (i = 0; i < P4EST_HALF; i++)
     {
-      quad = side[0]->is.hanging.quad[i];
-
       if (side[0]->is.hanging.is_ghost[i])
         qData = &ghostData[side[0]->is.hanging.quadid[i]];
       else
@@ -205,10 +199,8 @@ void computeGradGauss(p4est_iter_face_info_t *info,
     const int iface = side[1]->face;
 
     /*-----------------------------------------------------
-    | Side 0:  Normal face 
+    | Side 0:  Large face 
     |----------------------------------------------------*/
-    quad = side[0]->is.full.quad;  
-
     if (side[0]->is.full.is_ghost)
       qData = &ghostData[side[0]->is.full.quadid];
     else
@@ -225,8 +217,6 @@ void computeGradGauss(p4est_iter_face_info_t *info,
     |----------------------------------------------------*/
     for (i = 0; i < P4EST_HALF; i++)
     {
-      quad = side[1]->is.hanging.quad[i];
-
       if (side[1]->is.hanging.is_ghost[i])
         qData = &ghostData[side[1]->is.hanging.quadid[i]];
       else
@@ -269,11 +259,8 @@ void computeGradGauss(p4est_iter_face_info_t *info,
     const int iface = side[0]->face;
 
     /*-----------------------------------------------------
-    | Side 0:
-    | Normal face 
+    | Side 0: Large face 
     |----------------------------------------------------*/
-    quad = side[0]->is.full.quad;  
-
     if (side[0]->is.full.is_ghost)
       qData = &ghostData[side[0]->is.full.quadid];
     else
@@ -292,8 +279,6 @@ void computeGradGauss(p4est_iter_face_info_t *info,
     | Side 1:
     | Normal face 
     |----------------------------------------------------*/
-    quad = side[1]->is.full.quad;  
-
     if (side[1]->is.full.is_ghost)
       qData = &ghostData[side[1]->is.full.quadid];
     else
@@ -328,7 +313,7 @@ void computeGradGauss(p4est_iter_face_info_t *info,
   }
   else
   {
-    printf("UNDEFINED BEHAVIOUR!!!\n");
+    octPrint("UNDEFINED BEHAVIOUR!!!\n");
   }
 
 } /* computeGradGauss() */

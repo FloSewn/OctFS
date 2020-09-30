@@ -48,6 +48,18 @@
 ***********************************************************/
 typedef struct SimParam_t
 {
+
+  /* Simulation timestep */
+  octDouble timestep;
+  /* Total simulation time to compute*/
+  octDouble simTimeTot;
+  /* Actual simulation time */
+  octDouble simTime;
+  /* Temporal discretization scheme */
+  int       tempScheme;
+  /* Temporal flux factor */
+  octDouble tempFluxFac[3];
+
   /* Fluid viscosity */
   octDouble viscosity;
 
@@ -64,6 +76,12 @@ typedef struct SimParam_t
   octRefineFun usrRefineFun;
   /* User-defined coarsening function */
   octCoarseFun usrCoarseFun;
+
+  /*--------------------------------------------------------
+  | Temporary values
+  --------------------------------------------------------*/
+  int       tmp_varIdx;
+  octDouble tmp_fluxFac;
 
 } SimParam_t;
 
@@ -97,6 +115,15 @@ typedef struct SolverParam_t
   octDouble refErr_scalar;
   // Global refinement error for pressure  
   octDouble refErr_pressure;
+
+  // Number of timesteps between refinement periods
+  int refinePeriod;
+
+  // Numer of timesteps between repartitioning
+  int repartitionPeriod;
+
+  // Number of timesteps between writing the solution
+  int writePeriod;
 
 } SolverParam_t;
 

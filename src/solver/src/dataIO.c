@@ -39,6 +39,7 @@ static char varNames[OCT_MAX_VARS][OCT_VARNAME_LENGTH] =
   "y_velocity",
   "z_velocity",
   "pressure",
+  "density",
   "passive_scalar"
 }; 
 
@@ -135,8 +136,7 @@ static void interpSolution(p4est_iter_volume_info_t *info,
   for (i = 0; i < P4EST_CHILDREN; i++) 
   {
     this_u = quadData->vars[io_idx];
-    //this_u = quadData->grad_vars[io_idx][0];
-    //this_u = quadData->volume;
+    //this_u = quadData->b[io_idx];
 
     /*------------------------------------------------------
     | loop over the derivative components and 
@@ -170,9 +170,7 @@ static void interpSolution(p4est_iter_volume_info_t *info,
 * Function to write the solution of a single timestep 
 * to vtk format
 ***********************************************************/
-void writeSolutionVtk(SimData_t *simData, 
-                      int        step, 
-                      int        varIdx)
+void writeSolutionVtk(SimData_t *simData, int step)
 {
   p4est_t       *p4est       = simData->p4est;
   SolverParam_t *solverParam = simData->solverParam;
@@ -260,6 +258,7 @@ void writeSolutionVtk(SimData_t *simData,
 #endif
                                         varNames[3], var_interp[3], 
                                         varNames[4], var_interp[4], 
+                                        varNames[5], var_interp[5], 
                                         context);    
   SC_CHECK_ABORT(context != NULL,
                  P4EST_STRING "_vtk: Error writing field data");

@@ -68,12 +68,22 @@ typedef struct QuadData_t
   /*--------------------------------------------------------
   | Quad flow data
   --------------------------------------------------------*/
+  // Masfluxes
+  octDouble mflux[2*P4EST_DIM];
   // State variables 
   octDouble vars[OCT_MAX_VARS];
   // State variable gradients 
   octDouble grad_vars[OCT_MAX_VARS][P4EST_DIM];
   // State variable  buffers 
   octDouble vars_buf[OCT_MAX_VARS];
+
+  /*--------------------------------------------------------
+  | Solver buffer data
+  --------------------------------------------------------*/
+  octDouble *Ax_p;
+  octDouble  Ax[OCT_MAX_VARS];
+  octDouble  b[OCT_MAX_VARS];
+  octDouble  res[OCT_MAX_VARS];
 
 } QuadData_t;
 
@@ -91,10 +101,7 @@ void init_quadData(p4est_t *p4est,
 *-----------------------------------------------------------
 * Initializes the quad flow data structure
 ***********************************************************/
-void init_quadFlowData(p4est_t          *p4est,
-                       p4est_topidx_t    which_tree,
-                       p4est_quadrant_t *q, 
-                       QuadData_t       *flowData);
+void init_quadFlowData(QuadData_t *quadData);
 
 /***********************************************************
 * init_quadGeomData3d()
@@ -115,6 +122,50 @@ void init_quadGeomData2d(p4est_t          *p4est,
                          p4est_topidx_t    which_tree,
                          p4est_quadrant_t *q, 
                          QuadData_t       *quadData);
+
+/***********************************************************
+* interpQuadData()
+*-----------------------------------------------------------
+* Function for initialzing the state variables of incoming
+* quadrants from outgoing quadrants. 
+*
+* The functions p4est_refine_ext(), p4est_coarsen_ext() and
+* p4est_balance_ext() take as an arguments a p4est_replace_t
+* callback function.
+* This function allows to setup the quadrant data of
+* incoming quadrants from the data of outgoing quadrants, 
+* before the outgoing data is destroyed.
+* This function matches the p4est_replace_t prototype.
+*
+* In this example, we linearly interpolate the state 
+* variable of a quadrant that is refined to its children
+* and we average the children midpoints that are being 
+* coarsened to the paren
+*-----------------------------------------------------------
+* Arguments:
+* *p4est        : the forest
+*  which_tree   : the tree in the forest containing a 
+*                 child
+*  num_outgoing : the number of quadrants that are being
+*                 replaced:
+*                 Either 1 if a quadrant is being refined 
+*                 or P4EST_CHILDREN if a family of 
+*                 children are being coarsened
+*  outgoing     : the outgoing quadrants
+*  num_incoming : the number of quadrants that are being
+*                 added:
+*                 Either P4EST_CHILDREN if a quadrant is 
+*                 being refined, or 1 if a family of 
+*                 children are being coarsened.
+*  incoming     : quadrants whose data is initialized.
+*
+***********************************************************/
+void interpQuadData(p4est_t          *p4est, 
+                    p4est_topidx_t    which_tree,
+                    int               num_outgoing,
+                    p4est_quadrant_t *outgoing[],
+                    int               num_incoming, 
+                    p4est_quadrant_t *incoming[]);
 
 
 #endif /* SOLVER_QUADDATA_H */

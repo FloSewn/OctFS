@@ -157,6 +157,16 @@ SimParam_t *init_simParam(octInitFun   usrInitFun,
 {
   SimParam_t *simParam = malloc(sizeof(SimParam_t));
 
+  simParam->timestep      = 1e-1;
+  simParam->simTimeTot    = 1.0;
+  simParam->simTime       = 0.0;
+
+  simParam->tempScheme     = CRANK_NICOLSON;
+  simParam->tempFluxFac[0] = 0.0;
+  simParam->tempFluxFac[1] = 1.0;
+  simParam->tempFluxFac[2] = 0.5;
+  
+
   simParam->viscosity     = 1e-5;
   simParam->ref_length    = 1.0;
   simParam->ref_velocity  = 1.0;
@@ -165,6 +175,12 @@ SimParam_t *init_simParam(octInitFun   usrInitFun,
   simParam->usrInitFun   = usrInitFun;
   simParam->usrRefineFun = usrRefineFun;
   simParam->usrCoarseFun = usrCoarseFun;
+
+  /*--------------------------------------------------------
+  | Temporary values
+  --------------------------------------------------------*/
+  simParam->tmp_varIdx  = -1;
+  simParam->tmp_fluxFac = 0.0;
 
   return simParam;
 
@@ -204,6 +220,14 @@ SolverParam_t *init_solverParam(void)
   solverParam->refErr_scalar    = 0.05;
   // Global refinement error for pressure  
   solverParam->refErr_pressure  = 1.0E-03;
+
+
+  // Number of timesteps between refinement periods
+  solverParam->refinePeriod = 10;
+  // Numer of timesteps between repartitioning
+  solverParam->repartitionPeriod = 10;
+  // Number of timesteps between solution writes
+  solverParam->writePeriod = 10;
 
   return solverParam;
 

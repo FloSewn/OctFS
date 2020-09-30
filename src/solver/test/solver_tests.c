@@ -204,7 +204,10 @@ char *test_solver_init_destroy(int argc, char *argv[])
 
   computeGradients(simData, IS);
 
-  writeSolutionVtk(simData, 0, 0);
+  writeSolutionVtk(simData, 0);
+
+  solverRun(simData);
+
 
   destroy_simData(simData);
 

@@ -57,11 +57,11 @@ void init_quadData(p4est_t *p4est,
   init_quadGeomData2d(p4est, which_tree, q, quadData);
 #endif
 
-
-  init_quadFlowData(p4est, which_tree, q, quadData);
+  init_quadFlowData(quadData);
 
   /*--------------------------------------------------------
-  | Apply user-defined initialization function 
+  | Apply user-defined initialization function as 
+  | initialization. Otherwise, interpolate solution
   --------------------------------------------------------*/
   if (simData->simParam->usrInitFun != NULL)
   {
@@ -77,10 +77,7 @@ void init_quadData(p4est_t *p4est,
 *-----------------------------------------------------------
 * Initializes the quad flow data structure
 ***********************************************************/
-void init_quadFlowData(p4est_t          *p4est,
-                       p4est_topidx_t    which_tree,
-                       p4est_quadrant_t *q, 
-                       QuadData_t       *quadData)
+void init_quadFlowData(QuadData_t *quadData)
 {
   int i,j;
 
@@ -94,6 +91,25 @@ void init_quadFlowData(p4est_t          *p4est,
       quadData->grad_vars[i][j] = 0.0;
     }
   }
+
+  /*--------------------------------------------------------
+  | buffers for flow solver 
+  --------------------------------------------------------*/
+  quadData->Ax_p = NULL;
+
+  for (i = 0; i < OCT_MAX_VARS; i++)
+  {
+    quadData->Ax[i]  = 0.0;
+    quadData->b[i]   = 0.0;
+    quadData->res[i] = 0.0;
+  }
+
+
+  /*--------------------------------------------------------
+  | Set Density to 1
+  --------------------------------------------------------*/
+  quadData->vars[IRHO] = 1.0;
+
 
 } /* init_quadFlowData() */
 
@@ -212,4 +228,159 @@ void init_quadGeomData2d(p4est_t          *p4est,
 
 
 } /* init_quadGeomData() */
+
+/***********************************************************
+* interpQuadData()
+*-----------------------------------------------------------
+* Function for initialzing the state variables of incoming
+* quadrants from outgoing quadrants. 
+*
+* The functions p4est_refine_ext(), p4est_coarsen_ext() and
+* p4est_balance_ext() take as an arguments a p4est_replace_t
+* callback function.
+* This function allows to setup the quadrant data of
+* incoming quadrants from the data of outgoing quadrants, 
+* before the outgoing data is destroyed.
+* This function matches the p4est_replace_t prototype.
+*
+* In this example, we linearly interpolate the state 
+* variable of a quadrant that is refined to its children
+* and we average the children midpoints that are being 
+* coarsened to the paren
+*-----------------------------------------------------------
+* Arguments:
+* *p4est        : the forest
+*  which_tree   : the tree in the forest containing a 
+*                 child
+*  num_outgoing : the number of quadrants that are being
+*                 replaced:
+*                 Either 1 if a quadrant is being refined 
+*                 or P4EST_CHILDREN if a family of 
+*                 children are being coarsened
+*  outgoing     : the outgoing quadrants
+*  num_incoming : the number of quadrants that are being
+*                 added:
+*                 Either P4EST_CHILDREN if a quadrant is 
+*                 being refined, or 1 if a family of 
+*                 children are being coarsened.
+*  incoming     : quadrants whose data is initialized.
+*
+***********************************************************/
+void interpQuadData(p4est_t          *p4est, 
+                    p4est_topidx_t    which_tree,
+                    int               num_outgoing,
+                    p4est_quadrant_t *outgoing[],
+                    int               num_incoming, 
+                    p4est_quadrant_t *incoming[])
+{
+  QuadData_t          *parentData, *childData;
+
+  /*--------------------------------------------------------
+  | Coarsening -> Initialize new coarser quad from its
+  |               children
+  --------------------------------------------------------*/
+  if (num_outgoing > 1)
+  {
+    int i, j, k;
+
+    parentData = (QuadData_t *) incoming[0]->p.user_data;
+
+    /*------------------------------------------------------
+    | Init geometry and flow data for new quad
+    ------------------------------------------------------*/
+#ifdef P4_TO_P8
+    init_quadGeomData3d(p4est, which_tree, 
+                        incoming[0], parentData);
+#else
+    init_quadGeomData2d(p4est, which_tree, 
+                        incoming[0], parentData);
+#endif
+
+    init_quadFlowData(parentData);
+
+    /*------------------------------------------------------
+    | Interpolate data from children
+    ------------------------------------------------------*/
+    for (i = 0; i < P4EST_CHILDREN; i++) 
+    {
+      childData = (QuadData_t *) outgoing[i]->p.user_data;
+
+      for (j = 0; j < OCT_MAX_VARS; j++)
+      {
+        parentData->vars[j] += childData->vars[j];
+
+        for (k = 0; k < P4EST_DIM; k++)
+        {
+          parentData->grad_vars[j][k] += childData->grad_vars[j][k];
+        }
+      }
+    }
+
+    /*------------------------------------------------------
+    | Normalize with number of children
+    ------------------------------------------------------*/
+    for (j = 0; j < OCT_MAX_VARS; j++)
+    {
+      parentData->vars[j] /= P4EST_CHILDREN;
+
+      for (k = 0; k < P4EST_DIM; k++)
+      {
+        parentData->grad_vars[j][k] /= P4EST_CHILDREN;
+      }
+    }
+
+  }
+  /*--------------------------------------------------------
+  | Refinement -> Initialize new finer quads from their 
+  |               parent
+  --------------------------------------------------------*/
+  else
+  {
+    parentData = (QuadData_t *) outgoing[0]->p.user_data;
+
+    // Quad centroids
+    octDouble *pxx = parentData->centroid;
+    
+
+    int i, j, k;
+
+    for (i = 0; i < P4EST_CHILDREN; i++)
+    {
+      childData = (QuadData_t *) incoming[i]->p.user_data;
+
+      /*----------------------------------------------------
+      | Init geometry and flow data for new quad
+      ----------------------------------------------------*/
+#ifdef P4_TO_P8
+      init_quadGeomData3d(p4est, which_tree, 
+                          incoming[i], childData);
+#else
+      init_quadGeomData2d(p4est, which_tree, 
+                          incoming[i], childData);
+#endif
+
+      init_quadFlowData(parentData);
+
+      /*----------------------------------------------------
+      | Inpterpolate flow field data
+      ----------------------------------------------------*/
+      for (j = 0; j < OCT_MAX_VARS; j++)
+      {
+        childData->vars[j] = parentData->vars[j];
+
+        octDouble *cxx = childData->centroid;
+
+        for (k = 0; k < P4EST_DIM; k++)
+        {
+          const octDouble  dx = cxx[k] - pxx[k];
+
+          childData->vars[j] += dx * parentData->grad_vars[j][k];
+
+          childData->grad_vars[j][k] = parentData->grad_vars[j][k];
+        }
+      }
+    }
+  }
+
+} /* interpQuadData() */
 

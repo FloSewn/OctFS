@@ -23,27 +23,44 @@
 * Free Software Foundation, Inc., 51 Franklin Street, 
 * Fifth Floor, Boston, MA 02110-1301, USA.
 */
-#ifndef SOLVER_SOLVER_H_INCLUDED
-#define SOLVER_SOLVER_H_INCLUDED
+#ifndef SOLVER_SOLVETRANEQ_H
+#define SOLVER_SOLVETRANEQ_H
 
 #ifndef P4_TO_P8
 #include <p4est_bits.h>
-#include <p4est_vtk.h>
 #include <p4est_iterate.h>
 #else
 #include <p8est_bits.h>
-#include <p8est_vtk.h>
+#include <p8est_iterate.h>
 #endif
 
 #include "solver/simData.h"
 
 /***********************************************************
-* solverRun()
+* resetSolverBuffers()
 *-----------------------------------------------------------
-* Perform a transient simulation with initialized 
-* simulation data
+* Function sets all solver buffers Ax, b, res for every 
+* quad to zero
 ***********************************************************/
-void solverRun(SimData_t *simData);
+void resetSolverBuffers(p4est_iter_volume_info_t *info,
+                        void *user_data);
 
+/***********************************************************
+* compute_b_tranEq()
+*-----------------------------------------------------------
+* This function sums up the right hand side of the equation
+* system
+*   Ax = b 
+* that underlies a discretized transport equation.
+***********************************************************/
+void compute_b_tranEq(SimData_t *simData, int varIdx);
 
-#endif /* SOLVER_SOLVER_H_INCLUDED */
+/***********************************************************
+* solveTranEq()
+*-----------------------------------------------------------
+* Function to solve a transport equation for a specified
+* variable <varIdx>.
+***********************************************************/
+void solveTranEq(SimData_t *simData, int varIdx);
+
+#endif /* SOLVER_SOLVETRANEQ_H */

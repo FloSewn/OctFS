@@ -15,6 +15,11 @@ set( SOLVER_MAIN
   ${SOLVER_SRC}/coarsen.c
   ${SOLVER_SRC}/dataIO.c
   ${SOLVER_SRC}/gradients.c
+  ${SOLVER_SRC}/projection.c
+  ${SOLVER_SRC}/massflux.c
+  ${SOLVER_SRC}/fluxConvection.c
+  ${SOLVER_SRC}/solveTranEq.c
+  ${SOLVER_SRC}/timeIntegral.c
   )
 
 ##############################################################

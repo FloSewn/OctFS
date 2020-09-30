@@ -23,27 +23,29 @@
 * Free Software Foundation, Inc., 51 Franklin Street, 
 * Fifth Floor, Boston, MA 02110-1301, USA.
 */
-#ifndef SOLVER_SOLVER_H_INCLUDED
-#define SOLVER_SOLVER_H_INCLUDED
+#ifndef SOLVER_PROJECTION_H
+#define SOLVER_PROJECTION_H
 
 #ifndef P4_TO_P8
 #include <p4est_bits.h>
-#include <p4est_vtk.h>
+#include <p4est_extended.h>
 #include <p4est_iterate.h>
 #else
 #include <p8est_bits.h>
-#include <p8est_vtk.h>
+#include <p8est_extended.h>
+#include <p8est_iterate.h>
 #endif
 
+#include "solver/typedefs.h"
 #include "solver/simData.h"
+#include "solver/quadData.h"
 
 /***********************************************************
-* solverRun()
+* doProjectionStep()
 *-----------------------------------------------------------
-* Perform a transient simulation with initialized 
-* simulation data
+* Perform a single projection step to evolve the solution
+* in time.
 ***********************************************************/
-void solverRun(SimData_t *simData);
+void doProjectionStep(SimData_t *simData);
 
-
-#endif /* SOLVER_SOLVER_H_INCLUDED */
+#endif /* SOLVER_PROJECTION_H */

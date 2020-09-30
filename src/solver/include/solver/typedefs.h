@@ -46,17 +46,31 @@
 /***********************************************************
 * Solver variables
 ***********************************************************/
-#define OCT_MAX_VARS 5
+#define OCT_MAX_VARS 6
 #define OCT_VARNAME_LENGTH 32
 
+/***********************************************************
+* Solver indices
+***********************************************************/
 typedef enum 
 {
   IVX,
   IVY,
   IVZ,
   IP,
+  IRHO,
   IS
 } VarIndex;
+
+/***********************************************************
+* Temporal schemes
+***********************************************************/
+typedef enum 
+{ 
+  EULER_EXPLICIT,
+  EULER_IMPLICIT,
+  CRANK_NICOLSON
+} TempScheme;
 
 /***********************************************************
 * Typedefs for simData.h
