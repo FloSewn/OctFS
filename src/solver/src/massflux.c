@@ -140,7 +140,7 @@ void computeMassflux(p4est_iter_face_info_t *info,
     const octDouble w1 = qData->vars[IVZ];
 #endif
 
-    octDouble mflux_1 = qData->mflux[iface_1];
+    octDouble *mflux_1 = qData->mflux;
 
     /*-----------------------------------------------------
     | Side 0: -> Set normals
@@ -183,10 +183,10 @@ void computeMassflux(p4est_iter_face_info_t *info,
       /*---------------------------------------------------
       | Add mass fluxes to faces
       |--------------------------------------------------*/
-      octDouble mflux_0 = qData->mflux[iface_0];
+      octDouble *mflux_0 = qData->mflux;
 
-      mflux_0 += mflux;
-      mflux_1 -= mflux;
+      mflux_0[iface_0] += mflux;
+      mflux_1[iface_1] -= mflux;
 
     } /* for (i = 0; i < P4EST_HALF; i++) */
       
@@ -207,7 +207,7 @@ void computeMassflux(p4est_iter_face_info_t *info,
     const octDouble w0 = qData->vars[IVZ];
 #endif
 
-    octDouble mflux_0 = qData->mflux[iface_0];
+    octDouble *mflux_0 = qData->mflux;
 
     /*-----------------------------------------------------
     | Side 1: -> Set normals
@@ -250,10 +250,10 @@ void computeMassflux(p4est_iter_face_info_t *info,
       /*---------------------------------------------------
       | Add mass fluxes to faces
       |--------------------------------------------------*/
-      octDouble mflux_1 = qData->mflux[iface_1];
+      octDouble *mflux_1 = qData->mflux;
 
-      mflux_0 -= mflux;
-      mflux_1 += mflux;
+      mflux_0[iface_0] -= mflux;
+      mflux_1[iface_1] += mflux;
 
     } /* for (i = 0; i < P4EST_HALF; i++) */
   }
@@ -273,7 +273,7 @@ void computeMassflux(p4est_iter_face_info_t *info,
     const octDouble w0 = qData->vars[IVZ];
 #endif
 
-    octDouble mflux_0 = qData->mflux[iface_0];
+    octDouble *mflux_0 = qData->mflux; 
 
     /*-----------------------------------------------------
     | Use normals from side 0
@@ -299,7 +299,7 @@ void computeMassflux(p4est_iter_face_info_t *info,
     const octDouble w1 = qData->vars[IVZ];
 #endif
 
-    octDouble mflux_1 = qData->mflux[iface_1];
+    octDouble *mflux_1 = qData->mflux; 
 
 
     /*---------------------------------------------------
@@ -317,12 +317,12 @@ void computeMassflux(p4est_iter_face_info_t *info,
     const octDouble mflux = nx * um + ny * vm; 
 #endif
 
+
     /*---------------------------------------------------
     | Add mass fluxes to faces
     |--------------------------------------------------*/
-    mflux_0 += mflux;
-    mflux_1 -= mflux;
-
+    mflux_0[iface_0] += mflux;
+    mflux_1[iface_1] -= mflux;
   } 
   else
   {

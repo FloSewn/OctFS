@@ -110,6 +110,8 @@ typedef struct SolverParam_t
   octBool   recursive;
   // Re-Partition on coarsening
   octBool   partForCoarsen;
+  // Turn on/off automatic grid adaptation
+  octBool   adaptGrid;
 
   // Global refinement error for passive scalar 
   octDouble refErr_scalar;

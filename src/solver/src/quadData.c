@@ -340,7 +340,6 @@ void interpQuadData(p4est_t          *p4est,
 
     // Quad centroids
     octDouble *pxx = parentData->centroid;
-    
 
     int i, j, k;
 
@@ -359,7 +358,7 @@ void interpQuadData(p4est_t          *p4est,
                           incoming[i], childData);
 #endif
 
-      init_quadFlowData(parentData);
+      init_quadFlowData(childData);
 
       /*----------------------------------------------------
       | Inpterpolate flow field data

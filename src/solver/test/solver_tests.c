@@ -28,7 +28,7 @@ void init_function(QuadData_t *quadData)
   octDouble *xc = quadData->centroid;
 
   octDouble c[3] = {0.5, 0.5, 0.5};
-  octDouble w    = 0.2;
+  octDouble w    = 0.15;
   octDouble d[P4EST_DIM];
 
   octDouble r2 = 0.0;

@@ -136,7 +136,8 @@ static void interpSolution(p4est_iter_volume_info_t *info,
   for (i = 0; i < P4EST_CHILDREN; i++) 
   {
     this_u = quadData->vars[io_idx];
-    //this_u = quadData->b[io_idx];
+    //this_u = quadData->b[io_idx] / quadData->volume;
+    //this_u = quadData->grad_vars[io_idx][0];
 
     /*------------------------------------------------------
     | loop over the derivative components and 

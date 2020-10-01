@@ -110,7 +110,8 @@ void addFlux_conv_imp(p4est_iter_face_info_t *info,
       qData = (QuadData_t *) side[1]->is.full.quad->p.user_data;
 
     const octDouble var_1 = qData->vars[varIdx];
-    octDouble       Ax_1  = qData->Ax_p[varIdx];
+    octDouble      *Ax_1  = qData->Ax_p;
+
 
     /*-----------------------------------------------------
     | Side 0: -> Take massfluxes
@@ -125,7 +126,7 @@ void addFlux_conv_imp(p4est_iter_face_info_t *info,
 
       const octDouble mflux = qData->mflux[iface];
       const octDouble var_0 = qData->vars[varIdx];
-      octDouble       Ax_0  = qData->Ax_p[varIdx];
+      octDouble      *Ax_0  = qData->Ax_p;
 
       /*---------------------------------------------------
       | Determine upwind direction
@@ -138,8 +139,8 @@ void addFlux_conv_imp(p4est_iter_face_info_t *info,
       |--------------------------------------------------*/
       const octDouble flux = fluxFac * var_u * mflux;
 
-      Ax_0 += flux;
-      Ax_1 -= flux;
+      Ax_0[varIdx] += flux;
+      Ax_1[varIdx] -= flux;
 
     } /* for (i = 0; i < P4EST_HALF; i++) */
   }
@@ -156,7 +157,7 @@ void addFlux_conv_imp(p4est_iter_face_info_t *info,
       qData = (QuadData_t *) side[0]->is.full.quad->p.user_data;
 
     const octDouble var_0 = qData->vars[varIdx];
-    octDouble       Ax_0  = qData->Ax_p[varIdx];
+    octDouble      *Ax_0  = qData->Ax_p;
 
     /*-----------------------------------------------------
     | Side 1: -> Take massfluxes
@@ -171,7 +172,7 @@ void addFlux_conv_imp(p4est_iter_face_info_t *info,
 
       const octDouble mflux = qData->mflux[iface];
       const octDouble var_1 = qData->vars[varIdx];
-      octDouble       Ax_1  = qData->Ax_p[varIdx];
+      octDouble      *Ax_1  = qData->Ax_p;
 
       /*---------------------------------------------------
       | Determine upwind direction
@@ -184,8 +185,8 @@ void addFlux_conv_imp(p4est_iter_face_info_t *info,
       |--------------------------------------------------*/
       const octDouble flux = fluxFac * var_u * mflux;
 
-      Ax_0 -= flux;
-      Ax_1 += flux;
+      Ax_0[varIdx] -= flux;
+      Ax_1[varIdx] += flux;
 
     } /* for (i = 0; i < P4EST_HALF; i++) */
   }
@@ -203,7 +204,7 @@ void addFlux_conv_imp(p4est_iter_face_info_t *info,
 
     const octDouble mflux = qData->mflux[iface];
     const octDouble var_0 = qData->vars[varIdx];
-    octDouble       Ax_0  = qData->Ax_p[varIdx];
+    octDouble      *Ax_0  = qData->Ax_p;
 
     /*-----------------------------------------------------
     | Side 1: Large face 
@@ -214,7 +215,7 @@ void addFlux_conv_imp(p4est_iter_face_info_t *info,
       qData = (QuadData_t *) side[1]->is.full.quad->p.user_data;
 
     const octDouble var_1 = qData->vars[varIdx];
-    octDouble       Ax_1  = qData->Ax_p[varIdx];
+    octDouble      *Ax_1  = qData->Ax_p;
 
     /*-----------------------------------------------------
     | Determine upwind direction
@@ -227,8 +228,8 @@ void addFlux_conv_imp(p4est_iter_face_info_t *info,
     |----------------------------------------------------*/
     const octDouble flux = fluxFac * var_u * mflux;
 
-    Ax_0 += flux;
-    Ax_1 -= flux;
+    Ax_0[varIdx] += flux;
+    Ax_1[varIdx] -= flux;
   }
   else
   {

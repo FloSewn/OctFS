@@ -84,6 +84,7 @@ typedef struct QuadData_t
   octDouble  Ax[OCT_MAX_VARS];
   octDouble  b[OCT_MAX_VARS];
   octDouble  res[OCT_MAX_VARS];
+  octDouble  sbuf[SOLVER_BUF_VARS][OCT_MAX_VARS];
 
 } QuadData_t;
 

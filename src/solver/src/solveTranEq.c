@@ -113,7 +113,6 @@ void compute_b_tranEq(SimData_t *simData, int varIdx)
   /*--------------------------------------------------------
   | Empty buffer and set pointer Ax_p to b
   --------------------------------------------------------*/
-  octPrint("RESET RIGHT HAND SIDE");
   p4est_iterate(simData->p4est, simData->ghost, 
                 (void *) simData->ghostData,
                 resetSolverBuffers_b,  // cell callback
@@ -126,7 +125,6 @@ void compute_b_tranEq(SimData_t *simData, int varIdx)
   /*--------------------------------------------------------
   | Add convective fluxes
   --------------------------------------------------------*/
-  octPrint("ADD CONVECTIVE FLUXES");
   p4est_iterate(simData->p4est,      
                 simData->ghost,      
                 (void *) simData->ghostData, 
@@ -148,7 +146,6 @@ void compute_b_tranEq(SimData_t *simData, int varIdx)
   /*--------------------------------------------------------
   | Add temporal derivative terms
   --------------------------------------------------------*/
-  octPrint("ADD TEMPORAL DERIVATIVE");
   p4est_iterate(simData->p4est, simData->ghost, 
                 (void *) simData->ghostData,
                 addTimeDerivative,     // cell callback
@@ -156,7 +153,78 @@ void compute_b_tranEq(SimData_t *simData, int varIdx)
 #ifdef P4_TO_P8
                 NULL,                  // edge callback
 #endif
+                NULL);                 // corner callback
+
+} /* compute_b_tranEq() */
+
+/***********************************************************
+* compute_Ax_tranEq()
+*-----------------------------------------------------------
+* This function sums up the left hand side of the equation
+* system
+*   Ax = b 
+* that underlies a discretized transport equation.
+***********************************************************/
+void compute_Ax_tranEq(SimData_t *simData, int varIdx)
+{
+  /*--------------------------------------------------------
+  | Compute flux factors for chosen discretization scheme
+  --------------------------------------------------------*/
+  SimParam_t *simParam = simData->simParam;
+
+  int scheme            = simParam->tempScheme;
+  simParam->tmp_fluxFac = simParam->tempFluxFac[scheme];
+  simParam->tmp_varIdx  = varIdx;
+
+  /*--------------------------------------------------------
+  | Update gradient
+  --------------------------------------------------------*/
+  computeGradients(simData, varIdx); 
+
+  /*--------------------------------------------------------
+  | Empty buffer and set pointer Ax_p to b
+  --------------------------------------------------------*/
+  p4est_iterate(simData->p4est, simData->ghost, 
+                (void *) simData->ghostData,
+                resetSolverBuffers_Ax, // cell callback
+                NULL,                  // face callback
+#ifdef P4_TO_P8
+                NULL,                  // edge callback
+#endif
                 NULL);                 // corner callback*/
+
+  /*--------------------------------------------------------
+  | Add convective fluxes
+  --------------------------------------------------------*/
+  p4est_iterate(simData->p4est,      
+                simData->ghost,      
+                (void *) simData->ghostData, 
+                NULL,             // quad callback
+                addFlux_conv_imp, // face callback
+#ifdef P4_TO_P8
+                NULL,             // edge callback
+#endif
+                NULL);            // corner callback
+
+  /*--------------------------------------------------------
+  | Add diffusive fluxes
+  --------------------------------------------------------*/
+
+  /*--------------------------------------------------------
+  | Add sources
+  --------------------------------------------------------*/
+
+  /*--------------------------------------------------------
+  | Add temporal derivative terms
+  --------------------------------------------------------*/
+  p4est_iterate(simData->p4est, simData->ghost, 
+                (void *) simData->ghostData,
+                addTimeDerivative,     // cell callback
+                NULL,                  // face callback
+#ifdef P4_TO_P8
+                NULL,                  // edge callback
+#endif
+                NULL);                 // corner callback
 
 } /* compute_b_tranEq() */
 
@@ -168,7 +236,6 @@ void compute_b_tranEq(SimData_t *simData, int varIdx)
 ***********************************************************/
 void solveTranEq(SimData_t *simData, int varIdx)
 {
-
   /*--------------------------------------------------------
   | Compute right hand side b
   --------------------------------------------------------*/

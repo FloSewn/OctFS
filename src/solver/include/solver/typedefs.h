@@ -46,8 +46,10 @@
 /***********************************************************
 * Solver variables
 ***********************************************************/
-#define OCT_MAX_VARS 6
-#define OCT_VARNAME_LENGTH 32
+#define OCT_MAX_VARS        6 /* Max. number of variables */
+#define OCT_VARNAME_LENGTH 32 /* Max. var. name length    */
+
+#define SOLVER_BUF_VARS    10 /* No. of lin. solver buffs.*/
 
 /***********************************************************
 * Solver indices

@@ -115,31 +115,34 @@ SimData_t *init_simData(int          argc,
   for (idx = 0; idx < OCT_MAX_VARS; idx++)
     computeGradients(simData, idx); 
 
-  /*--------------------------------------------------------
-  | Initial refinement 
-  --------------------------------------------------------*/
-  p4est_refine(simData->p4est,
-               solverParam->recursive,
-               globalRefinement,
-               init_quadData);
+  if (solverParam->adaptGrid == TRUE)
+  {
+    /*------------------------------------------------------
+    | Initial refinement 
+    ------------------------------------------------------*/
+    p4est_refine(simData->p4est,
+                 solverParam->recursive,
+                 globalRefinement,
+                 init_quadData);
 
-  /*--------------------------------------------------------
-  | Initial coarsening 
-  --------------------------------------------------------*/
-  p4est_coarsen(simData->p4est,
-                solverParam->recursive,
-                globalCoarsening,
-                init_quadData);
+    /*------------------------------------------------------
+    | Initial coarsening 
+    ------------------------------------------------------*/
+    p4est_coarsen(simData->p4est,
+                  solverParam->recursive,
+                  globalCoarsening,
+                  init_quadData);
 
-  /*--------------------------------------------------------
-  | Distribute processes 
-  --------------------------------------------------------*/
-  p4est_balance(simData->p4est,
-                P4EST_CONNECT_FACE,
-                init_quadData);
-  p4est_partition(simData->p4est, 
-                  solverParam->partForCoarsen, 
-                  NULL);
+    /*------------------------------------------------------
+    | Distribute processes 
+    ------------------------------------------------------*/
+    p4est_balance(simData->p4est,
+                  P4EST_CONNECT_FACE,
+                  init_quadData);
+    p4est_partition(simData->p4est, 
+                    solverParam->partForCoarsen, 
+                    NULL);
+  }
 
 
   return simData;
@@ -203,6 +206,7 @@ SolverParam_t *init_solverParam(void)
   // Prefix for export files
   solverParam->io_exportPrefix = "TestRun";
 
+
   // Number of quadrants per MPU
   solverParam->nQuadMPU = 0;
   // Minimum level of refinement for initialization
@@ -215,6 +219,8 @@ SolverParam_t *init_solverParam(void)
   solverParam->recursive = TRUE;
   // Re-Partition on coarsening
   solverParam->partForCoarsen = TRUE;
+  // Turn on/off automatic grid adaptation
+  solverParam->adaptGrid = TRUE;
 
   // Global refinement error for passive scalar 
   solverParam->refErr_scalar    = 0.05;

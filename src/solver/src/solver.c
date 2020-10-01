@@ -64,6 +64,8 @@ void solverRun(SimData_t *simData)
   int repartitionPeriod = solverParam->repartitionPeriod;
   int writePeriod       = solverParam->writePeriod;
 
+  octBool adaptGrid     = solverParam->adaptGrid;
+
   octDouble dt         = simParam->timestep;
   octDouble simTimeTot = simParam->simTimeTot;
 
@@ -93,7 +95,9 @@ void solverRun(SimData_t *simData)
     /*------------------------------------------------------
     | Perform a refinement of the domain
     ------------------------------------------------------*/
-    if ( !(step % refinePeriod) && (step > 0) )
+    if ( !(step % refinePeriod) 
+        && (step > 0) 
+        && adaptGrid == TRUE)
     {
       p4est_refine_ext(simData->p4est,
                        solverParam->recursive,
@@ -123,7 +127,9 @@ void solverRun(SimData_t *simData)
     /*------------------------------------------------------
     | Repartition domain
     |-----------------------------------------------------*/
-    if (step > 0 && !(step % repartitionPeriod)) 
+    if (step > 0 
+        && !(step % repartitionPeriod) 
+        && adaptGrid == TRUE) 
     {
       p4est_partition(simData->p4est, 
                       solverParam->partForCoarsen, 
