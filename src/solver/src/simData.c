@@ -160,11 +160,11 @@ SimParam_t *init_simParam(octInitFun   usrInitFun,
 {
   SimParam_t *simParam = malloc(sizeof(SimParam_t));
 
-  simParam->timestep      = 1e-1;
-  simParam->simTimeTot    = 1.0;
+  simParam->timestep      = 1e-2;
+  simParam->simTimeTot    = 3e-1;
   simParam->simTime       = 0.0;
 
-  simParam->tempScheme     = CRANK_NICOLSON;
+  simParam->tempScheme     = EULER_EXPLICIT;
   simParam->tempFluxFac[0] = 0.0;
   simParam->tempFluxFac[1] = 1.0;
   simParam->tempFluxFac[2] = 0.5;
@@ -229,9 +229,9 @@ SolverParam_t *init_solverParam(void)
 
 
   // Number of timesteps between refinement periods
-  solverParam->refinePeriod = 10;
+  solverParam->refinePeriod = 1;
   // Numer of timesteps between repartitioning
-  solverParam->repartitionPeriod = 10;
+  solverParam->repartitionPeriod = 1;
   // Number of timesteps between solution writes
   solverParam->writePeriod = 10;
 

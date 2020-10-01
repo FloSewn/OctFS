@@ -29,6 +29,7 @@
 #include "solver/gradients.h"
 #include "solver/fluxConvection.h"
 #include "solver/timeIntegral.h"
+#include "solver/linearSolver.h"
 
 #ifndef P4_TO_P8
 #include <p4est_bits.h>
@@ -99,9 +100,8 @@ void compute_b_tranEq(SimData_t *simData, int varIdx)
   /*--------------------------------------------------------
   | Compute flux factors for chosen discretization scheme
   --------------------------------------------------------*/
-  SimParam_t *simParam = simData->simParam;
-
-  int scheme            = simParam->tempScheme;
+  SimParam_t *simParam  = simData->simParam;
+  int         scheme    = simParam->tempScheme;
   simParam->tmp_fluxFac = simParam->tempFluxFac[scheme]-1.0;
   simParam->tmp_varIdx  = varIdx;
 
@@ -236,13 +236,29 @@ void compute_Ax_tranEq(SimData_t *simData, int varIdx)
 ***********************************************************/
 void solveTranEq(SimData_t *simData, int varIdx)
 {
+  SimParam_t *simParam = simData->simParam;
+  int         scheme   = simParam->tempScheme;
+
   /*--------------------------------------------------------
   | Compute right hand side b
   --------------------------------------------------------*/
   compute_b_tranEq(simData, varIdx);
 
   /*--------------------------------------------------------
-  | Solve transport equation using Krylov solver
+  | Solve transport equation using explicit solver
   --------------------------------------------------------*/
+  if (scheme == EULER_EXPLICIT)
+  {
+    solve_explicit_sequential(simData, varIdx);
+  }
+  /*--------------------------------------------------------
+  | Solve transport equation using Krylov solver
+  | when using implicit temporal schemes
+  --------------------------------------------------------*/
+  else
+  {
+    //solve_implicit_sequential(simData, varIdx);
+    return;
+  }
 
 } /* solveTranEq() */

@@ -179,6 +179,12 @@ void solverRun(SimData_t *simData)
 
   } /* for (time, step ...) */
 
+  /*------------------------------------------------------
+  | Write final solution
+  |-----------------------------------------------------*/
+  octPrint("WRITE SOLUTION FILE FOR STEP %d", step);
+  writeSolutionVtk(simData, step);
+
   /*--------------------------------------------------------
   | Release ghost data
   |-------------------------------------------------------*/

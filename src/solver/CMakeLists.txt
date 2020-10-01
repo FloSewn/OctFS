@@ -20,6 +20,7 @@ set( SOLVER_MAIN
   ${SOLVER_SRC}/fluxConvection.c
   ${SOLVER_SRC}/solveTranEq.c
   ${SOLVER_SRC}/timeIntegral.c
+  ${SOLVER_SRC}/linearSolver.c
   )
 
 ##############################################################
