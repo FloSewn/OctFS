@@ -78,11 +78,6 @@ void solverRun(SimData_t *simData)
     computeGradients(simData, idx); 
 
   /*--------------------------------------------------------
-  | Initialize massfluxes
-  --------------------------------------------------------*/
-  initMassfluxes(simData);
-
-  /*--------------------------------------------------------
   | The main loop
   --------------------------------------------------------*/
   for (time = 0.0, step = 0; 
@@ -95,9 +90,9 @@ void solverRun(SimData_t *simData)
     /*------------------------------------------------------
     | Perform a refinement of the domain
     ------------------------------------------------------*/
-    if ( !(step % refinePeriod) 
+    if (  !(step % refinePeriod) 
         && (step > 0) 
-        && adaptGrid == TRUE)
+        && (adaptGrid == TRUE) )
     {
       p4est_refine_ext(simData->p4est,
                        solverParam->recursive,
@@ -127,9 +122,9 @@ void solverRun(SimData_t *simData)
     /*------------------------------------------------------
     | Repartition domain
     |-----------------------------------------------------*/
-    if (step > 0 
+    if (    (step > 0)
         && !(step % repartitionPeriod) 
-        && adaptGrid == TRUE) 
+        &&  (adaptGrid == TRUE) ) 
     {
       p4est_partition(simData->p4est, 
                       solverParam->partForCoarsen, 
@@ -143,7 +138,6 @@ void solverRun(SimData_t *simData)
         simData->ghostData = NULL;
       }
     }
-
 
     /*------------------------------------------------------
     | Synchronize ghost data

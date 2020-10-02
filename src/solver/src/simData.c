@@ -125,6 +125,9 @@ SimData_t *init_simData(int          argc,
                  globalRefinement,
                  init_quadData);
 
+    for (idx = 0; idx < OCT_MAX_VARS; idx++)
+      computeGradients(simData, idx); 
+
     /*------------------------------------------------------
     | Initial coarsening 
     ------------------------------------------------------*/
@@ -132,6 +135,9 @@ SimData_t *init_simData(int          argc,
                   solverParam->recursive,
                   globalCoarsening,
                   init_quadData);
+
+    for (idx = 0; idx < OCT_MAX_VARS; idx++)
+      computeGradients(simData, idx); 
 
     /*------------------------------------------------------
     | Distribute processes 
@@ -160,8 +166,8 @@ SimParam_t *init_simParam(octInitFun   usrInitFun,
 {
   SimParam_t *simParam = malloc(sizeof(SimParam_t));
 
-  simParam->timestep      = 1e-2;
-  simParam->simTimeTot    = 3e-1;
+  simParam->timestep      = 5e-3;
+  simParam->simTimeTot    = 1.0;
   simParam->simTime       = 0.0;
 
   simParam->tempScheme     = EULER_EXPLICIT;

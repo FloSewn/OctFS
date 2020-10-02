@@ -48,7 +48,7 @@
 *
 *   -> p4est_iter_volume_t callback function
 ***********************************************************/
-void resetMassflux(p4est_iter_face_info_t *info,
+void resetMassflux(p4est_iter_volume_info_t *info,
                    void                   *user_data);
 
 /***********************************************************

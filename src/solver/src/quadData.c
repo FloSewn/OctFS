@@ -92,6 +92,9 @@ void init_quadFlowData(QuadData_t *quadData)
     }
   }
 
+  for (i = 0; i < 2*P4EST_DIM; i++)
+    quadData->mflux[i] = 0.0;
+
   /*--------------------------------------------------------
   | buffers for flow solver 
   --------------------------------------------------------*/
@@ -103,12 +106,6 @@ void init_quadFlowData(QuadData_t *quadData)
     quadData->b[i]   = 0.0;
     quadData->res[i] = 0.0;
   }
-
-
-  /*--------------------------------------------------------
-  | Set Density to 1
-  --------------------------------------------------------*/
-  quadData->vars[IRHO] = 1.0;
 
 
 } /* init_quadFlowData() */
@@ -273,7 +270,7 @@ void interpQuadData(p4est_t          *p4est,
                     int               num_incoming, 
                     p4est_quadrant_t *incoming[])
 {
-  QuadData_t          *parentData, *childData;
+  QuadData_t *parentData, *childData;
 
   /*--------------------------------------------------------
   | Coarsening -> Initialize new coarser quad from its
@@ -366,15 +363,17 @@ void interpQuadData(p4est_t          *p4est,
       for (j = 0; j < OCT_MAX_VARS; j++)
       {
         childData->vars[j] = parentData->vars[j];
+      }
 
-        octDouble *cxx = childData->centroid;
+      octDouble *cxx = childData->centroid;
 
-        for (k = 0; k < P4EST_DIM; k++)
+      for (k = 0; k < P4EST_DIM; k++)
+      {
+        const octDouble  dx = cxx[k] - pxx[k];
+
+        for (j = 0; j < OCT_MAX_VARS; j++)
         {
-          const octDouble  dx = cxx[k] - pxx[k];
-
           childData->vars[j] += dx * parentData->grad_vars[j][k];
-
           childData->grad_vars[j][k] = parentData->grad_vars[j][k];
         }
       }

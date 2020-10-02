@@ -47,12 +47,10 @@ octDouble calcSqrErr(p4est_quadrant_t *q, int varIdx)
 {
   QuadData_t *quadData = (QuadData_t *) q->p.user_data;
 
-
   octDouble *grad_s = quadData->grad_vars[varIdx];
 
   octDouble l = (octDouble) P4EST_ROOT_LEN;
   octDouble h = (octDouble) P4EST_QUADRANT_LEN(q->level) / l;
-
   
   /*--------------------------------------------------------
   | use approximate derivative to estimate L2 error of 
@@ -94,7 +92,7 @@ int refinement_scalarError(p4est_t          *p4est,
 
   octDouble err2 = calcSqrErr(q, IS);
 
-  if (err2 > globErr2 * vol) 
+  if (err2 > globErr2 * globErr2 * vol) 
   {
     return 1;
   }

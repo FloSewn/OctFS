@@ -31,6 +31,7 @@
 #include "solver/simData.h"
 #include "solver/util.h"
 #include "solver/solveTranEq.h"
+#include "solver/massflux.h"
 #include "aux/dbg.h"
 
 #ifndef P4_TO_P8
@@ -51,6 +52,11 @@
 ***********************************************************/
 void doProjectionStep(SimData_t *simData)
 {
+  /*--------------------------------------------------------
+  | Initialize massfluxes
+  --------------------------------------------------------*/
+  initMassfluxes(simData);
+
   /*--------------------------------------------------------
   | Solve momentum equation
   --------------------------------------------------------*/

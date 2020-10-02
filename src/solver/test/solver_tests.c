@@ -46,6 +46,7 @@ void init_function(QuadData_t *quadData)
   quadData->vars[IVX] = 1.0;
   quadData->vars[IVY] = 0.0;
   quadData->vars[IVZ] = 0.0;
+  quadData->vars[IRHO] = 1.0;
 
 } /* init_function() */
 
@@ -80,6 +81,8 @@ int coarse_fn(p4est_t *p4est,
               p4est_topidx_t which_tree,
               p4est_quadrant_t *children[])
 {
+  return 0;
+
   QuadData_t     *quadData;
   octDouble      *xc;
   p4est_quadrant_t *q;
@@ -202,7 +205,7 @@ char *test_solver_init_destroy(int argc, char *argv[])
                                     refine_fn,
                                     coarse_fn);
 
-  computeGradients(simData, IS);
+  //computeGradients(simData, IS);
 
   writeSolutionVtk(simData, 0);
 

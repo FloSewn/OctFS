@@ -41,51 +41,20 @@
 #include <p8est_iterate.h>
 #endif
 
-/***********************************************************
-* resetMasflux()
-*-----------------------------------------------------------
-* Function sets all mass fluxes at element interfaces to 
-* zero
-*
-*   -> p4est_iter_volume_t callback function
-***********************************************************/
-void resetMassflux(p4est_iter_face_info_t *info,
-                   void                   *user_data)
+void resetMassflux(p4est_iter_volume_info_t *info,
+                   void  *user_data)
 {
-  QuadData_t      *qData;
-  QuadData_t      *ghostData = (QuadData_t *) user_data;
+  p4est_quadrant_t   *q = info->quad;
 
-  sc_array_t *sides = &(info->sides);
-  P4EST_ASSERT(sides->elem_count == 2);
+  QuadData_t *quadData = (QuadData_t *) q->p.user_data;
 
-  p4est_iter_face_side_t *side[2];
-  side[0] = p4est_iter_fside_array_index_int(sides, 0);
-  side[1] = p4est_iter_fside_array_index_int(sides, 1);
+  int i;
 
-  const int iface_0 = side[0]->face;
-  const int iface_1 = side[1]->face;
+  for (i = 0; i < 2*P4EST_DIM; i++)
+    quadData->mflux[i] = 0.0;
 
-  /*--------------------------------------------------------
-  | Side 0
-  |-------------------------------------------------------*/
-  if (side[0]->is.full.is_ghost)
-    qData = &ghostData[side[0]->is.full.quadid];
-  else
-    qData = (QuadData_t *) side[0]->is.full.quad->p.user_data;
+} /* resetMassflux() */
 
-  qData->mflux[iface_0] = 0.0;
-
-  /*--------------------------------------------------------
-  | Side 1
-  |-------------------------------------------------------*/
-  if (side[1]->is.full.is_ghost)
-    qData = &ghostData[side[1]->is.full.quadid];
-  else
-    qData = (QuadData_t *) side[1]->is.full.quad->p.user_data;
-
-  qData->mflux[iface_1] = 0.0;
-
-} /* resetSolverBuffers() */
 
 /***********************************************************
 * computeMassflux()
@@ -348,8 +317,8 @@ void initMassfluxes(SimData_t *simData)
   p4est_iterate(p4est, 
                 ghost, 
                 (void *) ghostData,
-                NULL,           // cell callback
-                resetMassflux,  // face callback
+                resetMassflux,  // cell callback
+                NULL,           // face callback
 #ifdef P4_TO_P8
                 NULL,           // edge callback
 #endif
