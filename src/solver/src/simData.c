@@ -99,14 +99,13 @@ SimData_t *init_simData(int          argc,
   /*--------------------------------------------------------
   | Init p4est ghost data structure
   --------------------------------------------------------*/
-  QuadData_t    *ghostData;
-  p4est_ghost_t *ghost;
-  ghost = p4est_ghost_new(simData->p4est, P4EST_CONNECT_FULL);
-  ghostData = P4EST_ALLOC(QuadData_t, ghost->ghosts.elem_count);
-  p4est_ghost_exchange_data(simData->p4est, ghost, ghostData);
-
-  simData->ghost     = ghost;
-  simData->ghostData = ghostData;
+  simData->ghost = p4est_ghost_new(simData->p4est, 
+                                   P4EST_CONNECT_FULL);
+  simData->ghostData = P4EST_ALLOC(QuadData_t, 
+                          simData->ghost->ghosts.elem_count);
+  p4est_ghost_exchange_data(simData->p4est, 
+                            simData->ghost, 
+                            simData->ghostData);
 
   /*--------------------------------------------------------
   | Initial calculation of gradients
@@ -125,31 +124,31 @@ SimData_t *init_simData(int          argc,
                  globalRefinement,
                  init_quadData);
 
-    for (idx = 0; idx < OCT_MAX_VARS; idx++)
-      computeGradients(simData, idx); 
-
-    /*------------------------------------------------------
-    | Initial coarsening 
-    ------------------------------------------------------*/
     p4est_coarsen(simData->p4est,
                   solverParam->recursive,
                   globalCoarsening,
                   init_quadData);
 
-    for (idx = 0; idx < OCT_MAX_VARS; idx++)
-      computeGradients(simData, idx); 
-
-    /*------------------------------------------------------
-    | Distribute processes 
-    ------------------------------------------------------*/
     p4est_balance(simData->p4est,
                   P4EST_CONNECT_FACE,
                   init_quadData);
-    p4est_partition(simData->p4est, 
-                    solverParam->partForCoarsen, 
-                    NULL);
+
+    p4est_ghost_destroy(simData->ghost);
+    P4EST_FREE(simData->ghostData);
+    simData->ghost = NULL;
+    simData->ghostData = NULL;
   }
 
+  simData->ghost = p4est_ghost_new(simData->p4est, 
+                                   P4EST_CONNECT_FULL);
+  simData->ghostData = P4EST_ALLOC(QuadData_t, 
+                          simData->ghost->ghosts.elem_count);
+  p4est_ghost_exchange_data(simData->p4est, 
+                            simData->ghost, 
+                            simData->ghostData);
+
+  for (idx = 0; idx < OCT_MAX_VARS; idx++)
+    computeGradients(simData, idx); 
 
   return simData;
 
@@ -189,7 +188,9 @@ SimParam_t *init_simParam(octInitFun   usrInitFun,
   | Temporary values
   --------------------------------------------------------*/
   simParam->tmp_varIdx  = -1;
+  simParam->tmp_sbufIdx = -1;
   simParam->tmp_fluxFac = 0.0;
+  simParam->tmp_globRes = 0.0;
 
   return simParam;
 

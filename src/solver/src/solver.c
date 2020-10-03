@@ -69,7 +69,6 @@ void solverRun(SimData_t *simData)
   octDouble dt         = simParam->timestep;
   octDouble simTimeTot = simParam->simTimeTot;
 
-
   /*--------------------------------------------------------
   | Initialize gradients
   --------------------------------------------------------*/

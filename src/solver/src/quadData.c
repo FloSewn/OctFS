@@ -102,9 +102,10 @@ void init_quadFlowData(QuadData_t *quadData)
 
   for (i = 0; i < OCT_MAX_VARS; i++)
   {
-    quadData->Ax[i]  = 0.0;
-    quadData->b[i]   = 0.0;
     quadData->res[i] = 0.0;
+
+    for (j = 0; j < SOLVER_BUF_VARS; j++)
+      quadData->sbuf[j][i] = 0.0;
   }
 
 

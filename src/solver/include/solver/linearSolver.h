@@ -40,6 +40,27 @@
 #include "solver/simData.h"
 #include "solver/quadData.h"
 
+
+
+/***********************************************************
+* computeAx()
+*-----------------------------------------------------------
+* Function pointer to function for calculation of Ax.
+***********************************************************/
+typedef void (*computeAx) (SimData_t *simData,
+                           int        varIdx,
+                           int        sbufIdx);
+
+/***********************************************************
+* resetSolverBuffers()
+*-----------------------------------------------------------
+* Function sets all solver buffer variables to zero.
+*
+*   -> p4est_iter_volume_t callback function
+***********************************************************/
+void resetSolverBuffers(p4est_iter_volume_info_t *info,
+                        void *user_data);
+
 /***********************************************************
 * addRightHandSide()
 *-----------------------------------------------------------
@@ -52,6 +73,20 @@ void addRightHandSide(p4est_iter_volume_info_t *info,
                       void *user_data);
 
 /***********************************************************
+* linSolve_bicgstab()
+*-----------------------------------------------------------
+* Iterative solver for an equation system 
+*
+*   A x = b
+*
+* using a biconjugate gradient stabilized method (BICGSTAB)
+*
+***********************************************************/
+void linSolve_bicgstab(SimData_t *simData,
+                       computeAx  cmpAx,
+                       int        varIdx);
+
+/***********************************************************
 * solve_explicit_sequential()
 *-----------------------------------------------------------
 * Solve the equation system 
@@ -59,6 +94,17 @@ void addRightHandSide(p4est_iter_volume_info_t *info,
 * using an explicit method.
 ***********************************************************/
 void solve_explicit_sequential(SimData_t *simData, 
+                               int        varIdx);
+
+/***********************************************************
+* solve_implicit_sequential()
+*-----------------------------------------------------------
+* Solve the equation system 
+*   A x = b
+* using an implicit method.
+***********************************************************/
+void solve_implicit_sequential(SimData_t *simData, 
+                               computeAx  cmpAx,
                                int        varIdx);
 
 #endif /* SOLVER_LINEARSOLVER_H */

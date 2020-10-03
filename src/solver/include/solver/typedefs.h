@@ -56,11 +56,11 @@
 ***********************************************************/
 typedef enum 
 {
+  IRHO,
   IVX,
   IVY,
   IVZ,
   IP,
-  IRHO,
   IS
 } VarIndex;
 
@@ -73,6 +73,23 @@ typedef enum
   EULER_IMPLICIT,
   CRANK_NICOLSON
 } TempScheme;
+
+/***********************************************************
+* Indices for buffer variables of linear solver 
+***********************************************************/
+typedef enum 
+{
+  LS_AX,  /* Holds results for the product Ax             */
+  LS_B,   /* Holds results for the right hand side b      */
+  LS_VN,  /* Holds new updated values of variable data    */
+  LS_R,   /* Contains solution to (b - Ax) at iteration n */
+  LS_R0,  /* Contains solution to (b - Ax) at iteration 0 */
+  LS_P,   /* Direction for new solution                   */
+  LS_V,   /* Holds A*p                                    */
+  LS_H,   /* x - alpha * p                                */
+  LS_S,   /* r - alpha * v                                */
+  LS_t    /*                                              */
+} LinSolveIndex;
 
 /***********************************************************
 * Typedefs for simData.h

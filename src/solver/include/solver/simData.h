@@ -80,8 +80,11 @@ typedef struct SimParam_t
   /*--------------------------------------------------------
   | Temporary values
   --------------------------------------------------------*/
-  int       tmp_varIdx;
-  octDouble tmp_fluxFac;
+  int       tmp_varIdx;    /* Variables index             */
+  int       tmp_sbufIdx;   /* Solver buffer index         */
+  octDouble tmp_fluxFac;   /* Factor for fluxes           */
+  octDouble tmp_globRes;   /* Global residual buffer      */
+
 
 } SimParam_t;
 

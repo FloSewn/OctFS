@@ -78,8 +78,9 @@ void addFlux_conv_imp(p4est_iter_face_info_t *info,
 
   octDouble fluxFac = simParam->tmp_fluxFac;
   int       varIdx  = simParam->tmp_varIdx;
+  int       bufIdx  = simParam->tmp_sbufIdx;
 
-  QuadData_t      *qData;
+  QuadData_t      *qDat0, *qDat1;
   QuadData_t      *ghostData = (QuadData_t *) user_data;
 
   sc_array_t *sides = &(info->sides);
@@ -105,13 +106,12 @@ void addFlux_conv_imp(p4est_iter_face_info_t *info,
     | Side 1: Large face 
     |----------------------------------------------------*/
     if (side[1]->is.full.is_ghost)
-      qData = &ghostData[side[1]->is.full.quadid];
+      qDat1 = &ghostData[side[1]->is.full.quadid];
     else
-      qData = (QuadData_t *) side[1]->is.full.quad->p.user_data;
+      qDat1 = (QuadData_t *) side[1]->is.full.quad->p.user_data;
 
-    const octDouble var_1 = qData->vars[varIdx];
-    octDouble      *Ax_1  = qData->Ax_p;
-
+    //const octDouble var_1 = qData->vars[varIdx];
+    //octDouble      *Ax_1  = qData->Ax_p;
 
     /*-----------------------------------------------------
     | Side 0: -> Take massfluxes
@@ -120,27 +120,32 @@ void addFlux_conv_imp(p4est_iter_face_info_t *info,
     for (i = 0; i < P4EST_HALF; i++)
     {
       if (side[0]->is.hanging.is_ghost[i])
-        qData = &ghostData[side[0]->is.hanging.quadid[i]];
+        qDat0 = &ghostData[side[0]->is.hanging.quadid[i]];
       else
-        qData = (QuadData_t*) side[0]->is.hanging.quad[i]->p.user_data;
+        qDat0 = (QuadData_t*) side[0]->is.hanging.quad[i]->p.user_data;
 
-      const octDouble mflux = qData->mflux[iface];
-      const octDouble var_0 = qData->vars[varIdx];
-      octDouble      *Ax_0  = qData->Ax_p;
+      //const octDouble mflux = qData->mflux[iface];
+      //const octDouble var_0 = qData->vars[varIdx];
+      //octDouble      *Ax_0  = qData->Ax_p;
 
       /*---------------------------------------------------
       | Determine upwind direction
       | -> var_0 has the outward facing normal
       |--------------------------------------------------*/
-      const octDouble var_u = UPWIND_DIR(mflux,var_0,var_1);
+      const octDouble mflux = qDat0->mflux[iface];
+      const octDouble var_u = UPWIND_DIR(mflux,
+                                         qDat0->vars[varIdx],
+                                         qDat1->vars[varIdx]);
 
       /*---------------------------------------------------
       | Add fluxes
       |--------------------------------------------------*/
       const octDouble flux = fluxFac * var_u * mflux;
 
-      Ax_0[varIdx] += flux;
-      Ax_1[varIdx] -= flux;
+      //Ax_0[varIdx] += flux;
+      //Ax_1[varIdx] -= flux;
+      qDat0->sbuf[bufIdx][varIdx] += flux;
+      qDat1->sbuf[bufIdx][varIdx] -= flux;
 
     } /* for (i = 0; i < P4EST_HALF; i++) */
   }
@@ -152,12 +157,9 @@ void addFlux_conv_imp(p4est_iter_face_info_t *info,
     | Side 0: Large face 
     |----------------------------------------------------*/
     if (side[0]->is.full.is_ghost)
-      qData = &ghostData[side[0]->is.full.quadid];
+      qDat0 = &ghostData[side[0]->is.full.quadid];
     else
-      qData = (QuadData_t *) side[0]->is.full.quad->p.user_data;
-
-    const octDouble var_0 = qData->vars[varIdx];
-    octDouble      *Ax_0  = qData->Ax_p;
+      qDat0 = (QuadData_t *) side[0]->is.full.quad->p.user_data;
 
     /*-----------------------------------------------------
     | Side 1: -> Take massfluxes
@@ -166,27 +168,26 @@ void addFlux_conv_imp(p4est_iter_face_info_t *info,
     for (i = 0; i < P4EST_HALF; i++)
     {
       if (side[1]->is.hanging.is_ghost[i])
-        qData = &ghostData[side[1]->is.hanging.quadid[i]];
+        qDat1 = &ghostData[side[1]->is.hanging.quadid[i]];
       else
-        qData = (QuadData_t*) side[1]->is.hanging.quad[i]->p.user_data;
-
-      const octDouble mflux = qData->mflux[iface];
-      const octDouble var_1 = qData->vars[varIdx];
-      octDouble      *Ax_1  = qData->Ax_p;
+        qDat1 = (QuadData_t*) side[1]->is.hanging.quad[i]->p.user_data;
 
       /*---------------------------------------------------
       | Determine upwind direction
       | -> var_1 has the outward facing normal
       |--------------------------------------------------*/
-      const octDouble var_u = UPWIND_DIR(mflux,var_1,var_0);
+      const octDouble mflux = qDat1->mflux[iface];
+      const octDouble var_u = UPWIND_DIR(mflux,
+                                         qDat1->vars[varIdx],
+                                         qDat0->vars[varIdx]);
 
       /*---------------------------------------------------
       | Add fluxes
       |--------------------------------------------------*/
       const octDouble flux = fluxFac * var_u * mflux;
 
-      Ax_0[varIdx] -= flux;
-      Ax_1[varIdx] += flux;
+      qDat0->sbuf[bufIdx][varIdx] -= flux;
+      qDat1->sbuf[bufIdx][varIdx] += flux;
 
     } /* for (i = 0; i < P4EST_HALF; i++) */
   }
@@ -198,38 +199,34 @@ void addFlux_conv_imp(p4est_iter_face_info_t *info,
     | Side 0: Large face 
     |----------------------------------------------------*/
     if (side[0]->is.full.is_ghost)
-      qData = &ghostData[side[0]->is.full.quadid];
+      qDat0 = &ghostData[side[0]->is.full.quadid];
     else
-      qData = (QuadData_t *) side[0]->is.full.quad->p.user_data;
-
-    const octDouble mflux = qData->mflux[iface];
-    const octDouble var_0 = qData->vars[varIdx];
-    octDouble      *Ax_0  = qData->Ax_p;
+      qDat0 = (QuadData_t *) side[0]->is.full.quad->p.user_data;
 
     /*-----------------------------------------------------
     | Side 1: Large face 
     |----------------------------------------------------*/
     if (side[1]->is.full.is_ghost)
-      qData = &ghostData[side[1]->is.full.quadid];
+      qDat1 = &ghostData[side[1]->is.full.quadid];
     else
-      qData = (QuadData_t *) side[1]->is.full.quad->p.user_data;
-
-    const octDouble var_1 = qData->vars[varIdx];
-    octDouble      *Ax_1  = qData->Ax_p;
+      qDat1 = (QuadData_t *) side[1]->is.full.quad->p.user_data;
 
     /*-----------------------------------------------------
     | Determine upwind direction
     | -> var_0 has the outward facing normal
     |----------------------------------------------------*/
-    const octDouble var_u = UPWIND_DIR(mflux,var_0,var_1);
+    const octDouble mflux = qDat0->mflux[iface];
+    const octDouble var_u = UPWIND_DIR(mflux,
+                                       qDat0->vars[varIdx],
+                                       qDat1->vars[varIdx]);
 
     /*-----------------------------------------------------
     | Add fluxes
     |----------------------------------------------------*/
     const octDouble flux = fluxFac * var_u * mflux;
 
-    Ax_0[varIdx] += flux;
-    Ax_1[varIdx] -= flux;
+    qDat0->sbuf[bufIdx][varIdx] += flux;
+    qDat1->sbuf[bufIdx][varIdx] -= flux;
   }
   else
   {

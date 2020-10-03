@@ -35,11 +35,11 @@
 ***********************************************************/
 static char varNames[OCT_MAX_VARS][OCT_VARNAME_LENGTH] = 
 {
+  "density",
   "x_velocity",
   "y_velocity",
   "z_velocity",
   "pressure",
-  "density",
   "passive_scalar"
 }; 
 

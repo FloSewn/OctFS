@@ -42,27 +42,28 @@
 #endif
 
 /***********************************************************
-* resetSolverBuffers_Ax()
+* setSolverBuffer()
 *-----------------------------------------------------------
-* Function sets all solver buffers Ax for every 
-* quad to zero and lets Ax_p point to Ax.
+* Function sets the solver buffer pointer sbuf_p for every 
+* quad.
 *
 *   -> p4est_iter_cell_t callback function
 ***********************************************************/
-void resetSolverBuffers_Ax(p4est_iter_volume_info_t *info,
-                           void *user_data)
+void setSolverBuffer(p4est_iter_volume_info_t *info,
+                     void *user_data)
 {
   p4est_quadrant_t   *q = info->quad;
-
   QuadData_t     *quadData = (QuadData_t *) q->p.user_data;
 
-  int i; 
-  for (i = 0; i < OCT_MAX_VARS; i++)
-    quadData->Ax[i]  = 0.0;
+  p4est_t    *p4est    = info->p4est;
+  SimData_t  *simData  = (SimData_t *) p4est->user_pointer;
+  SimParam_t *simParam = simData->simParam;
 
-  quadData->Ax_p = quadData->Ax;
+  int sbufIdx = simParam->tmp_sbufIdx;
 
-} /* resetSolverBuffers_Ax() */
+  quadData->Ax_p = quadData->sbuf[sbufIdx];
+
+} /* setSolverBuffer() */
 
 /***********************************************************
 * resetSolverBuffers_b()
@@ -81,9 +82,9 @@ void resetSolverBuffers_b(p4est_iter_volume_info_t *info,
 
   int i; 
   for (i = 0; i < OCT_MAX_VARS; i++)
-    quadData->b[i]   = 0.0;
+    quadData->sbuf[LS_B][i]   = 0.0;
 
-  quadData->Ax_p = quadData->b;
+  quadData->Ax_p = quadData->sbuf[LS_B];
 
 } /* resetSolverBuffers_b() */
 
@@ -104,6 +105,7 @@ void compute_b_tranEq(SimData_t *simData, int varIdx)
   int         scheme    = simParam->tempScheme;
   simParam->tmp_fluxFac = simParam->tempFluxFac[scheme]-1.0;
   simParam->tmp_varIdx  = varIdx;
+  simParam->tmp_sbufIdx = LS_B;
 
   /*--------------------------------------------------------
   | Update gradient
@@ -111,29 +113,17 @@ void compute_b_tranEq(SimData_t *simData, int varIdx)
   computeGradients(simData, varIdx); 
 
   /*--------------------------------------------------------
-  | Empty buffer and set pointer Ax_p to b
-  --------------------------------------------------------*/
-  p4est_iterate(simData->p4est, simData->ghost, 
-                (void *) simData->ghostData,
-                resetSolverBuffers_b,  // cell callback
-                NULL,                  // face callback
-#ifdef P4_TO_P8
-                NULL,                  // edge callback
-#endif
-                NULL);                 // corner callback*/
-
-  /*--------------------------------------------------------
   | Add convective fluxes
   --------------------------------------------------------*/
   p4est_iterate(simData->p4est,      
                 simData->ghost,      
                 (void *) simData->ghostData, 
-                NULL,             // quad callback
-                addFlux_conv_imp, // face callback
+                resetSolverBuffers_b, // quad callback
+                addFlux_conv_imp,     // face callback
 #ifdef P4_TO_P8
-                NULL,             // edge callback
+                NULL,                 // edge callback
 #endif
-                NULL);            // corner callback
+                NULL);                // corner callback
 
   /*--------------------------------------------------------
   | Add diffusive fluxes
@@ -165,7 +155,9 @@ void compute_b_tranEq(SimData_t *simData, int varIdx)
 *   Ax = b 
 * that underlies a discretized transport equation.
 ***********************************************************/
-void compute_Ax_tranEq(SimData_t *simData, int varIdx)
+void compute_Ax_tranEq(SimData_t *simData, 
+                       int        varIdx, 
+                       int        sbufIdx)
 {
   /*--------------------------------------------------------
   | Compute flux factors for chosen discretization scheme
@@ -175,6 +167,7 @@ void compute_Ax_tranEq(SimData_t *simData, int varIdx)
   int scheme            = simParam->tempScheme;
   simParam->tmp_fluxFac = simParam->tempFluxFac[scheme];
   simParam->tmp_varIdx  = varIdx;
+  simParam->tmp_sbufIdx = sbufIdx;
 
   /*--------------------------------------------------------
   | Update gradient
@@ -186,12 +179,12 @@ void compute_Ax_tranEq(SimData_t *simData, int varIdx)
   --------------------------------------------------------*/
   p4est_iterate(simData->p4est, simData->ghost, 
                 (void *) simData->ghostData,
-                resetSolverBuffers_Ax, // cell callback
-                NULL,                  // face callback
+                setSolverBuffer, // cell callback
+                NULL,            // face callback
 #ifdef P4_TO_P8
-                NULL,                  // edge callback
+                NULL,            // edge callback
 #endif
-                NULL);                 // corner callback*/
+                NULL);           // corner callback
 
   /*--------------------------------------------------------
   | Add convective fluxes
@@ -226,7 +219,7 @@ void compute_Ax_tranEq(SimData_t *simData, int varIdx)
 #endif
                 NULL);                 // corner callback
 
-} /* compute_b_tranEq() */
+} /* compute_Ax_tranEq() */
 
 /***********************************************************
 * solveTranEq()
@@ -257,8 +250,17 @@ void solveTranEq(SimData_t *simData, int varIdx)
   --------------------------------------------------------*/
   else
   {
-    //solve_implicit_sequential(simData, varIdx);
-    return;
+    solve_implicit_sequential(simData, 
+                              compute_Ax_tranEq, 
+                              varIdx);
   }
+
+  /*--------------------------------------------------------
+  | Exchange data
+  --------------------------------------------------------*/
+  p4est_ghost_exchange_data(simData->p4est, 
+                            simData->ghost, 
+                            simData->ghostData);
+
 
 } /* solveTranEq() */

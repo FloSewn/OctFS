@@ -317,25 +317,20 @@ void initMassfluxes(SimData_t *simData)
   p4est_iterate(p4est, 
                 ghost, 
                 (void *) ghostData,
-                resetMassflux,  // cell callback
-                NULL,           // face callback
+                resetMassflux,   // cell callback
+                computeMassflux, // face callback
 #ifdef P4_TO_P8
-                NULL,           // edge callback
+                NULL,            // edge callback
 #endif
-                NULL);          // corner callback*/
+                NULL);           // corner callback*/
 
-  /*-------------------------------------------------------
-  | Reconstruct mass fluxes at interfaces
-  -------------------------------------------------------*/
-  p4est_iterate(p4est, 
-                ghost, 
-                (void *) ghostData,
-                NULL,             // cell callback
-                computeMassflux,  // face callback
-#ifdef P4_TO_P8
-                NULL,             // edge callback
-#endif
-                NULL);            // corner callback*/
+  /*--------------------------------------------------------
+  | Exchange data
+  --------------------------------------------------------*/
+  p4est_ghost_exchange_data(simData->p4est, 
+                            simData->ghost, 
+                            simData->ghostData);
+
 
 } /* calcMassfluxes() */
 

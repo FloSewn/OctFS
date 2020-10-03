@@ -116,15 +116,11 @@ void computeGradGauss(p4est_iter_face_info_t *info,
 {
   int i;
 
-  QuadData_t      *qData;
+  QuadData_t      *qDat0, *qDat1;
   QuadData_t      *ghostData = (QuadData_t *) user_data;
 
   sc_array_t *sides = &(info->sides);
   P4EST_ASSERT(sides->elem_count == 2);
-
-
-  octDouble  var_0, var_1;
-  octDouble  *grad_0, *grad_1;
 
   /*-------------------------------------------------------
   | every face has two sides
@@ -144,12 +140,9 @@ void computeGradGauss(p4est_iter_face_info_t *info,
     | Side 1: Large face 
     |----------------------------------------------------*/
     if (side[1]->is.full.is_ghost)
-      qData = &ghostData[side[1]->is.full.quadid];
+      qDat1 = &ghostData[side[1]->is.full.quadid];
     else
-      qData = (QuadData_t *) side[1]->is.full.quad->p.user_data;
-
-    var_1  = qData->vars[gradVarIdx];
-    grad_1 = qData->grad_vars[gradVarIdx];
+      qDat1 = (QuadData_t *) side[1]->is.full.quad->p.user_data;
 
     /*-----------------------------------------------------
     | Side 0: -> Set normals
@@ -158,22 +151,21 @@ void computeGradGauss(p4est_iter_face_info_t *info,
     for (i = 0; i < P4EST_HALF; i++)
     {
       if (side[0]->is.hanging.is_ghost[i])
-        qData = &ghostData[side[0]->is.hanging.quadid[i]];
+        qDat0 = &ghostData[side[0]->is.hanging.quadid[i]];
       else
-        qData = (QuadData_t*) side[0]->is.hanging.quad[i]->p.user_data;
+        qDat0 = (QuadData_t*) side[0]->is.hanging.quad[i]->p.user_data;
 
-      var_0  = qData->vars[gradVarIdx];
-      grad_0 = qData->grad_vars[gradVarIdx];
-
-      const octDouble nx = qData->normals[iface][0];
-      const octDouble ny = qData->normals[iface][1];
-#ifdef P4_TO_P8
-      const octDouble nz = qData->normals[iface][2];
-#endif
 
       /*---------------------------------------------------
       | Add flux contribution
       |--------------------------------------------------*/
+      const octDouble nx = qDat0->normals[iface][0];
+      const octDouble ny = qDat0->normals[iface][1];
+#ifdef P4_TO_P8
+      const octDouble nz = qDat0->normals[iface][2];
+#endif
+      const octDouble var_1  = qDat1->vars[gradVarIdx];
+      const octDouble var_0  = qDat0->vars[gradVarIdx];
       const octDouble var_f = 0.5 * (var_0 + var_1);
 
       const octDouble grad_x = nx * var_f;
@@ -182,15 +174,15 @@ void computeGradGauss(p4est_iter_face_info_t *info,
       const octDouble grad_z = nz * var_f;
 #endif
 
-      grad_0[0] += grad_x;
-      grad_1[0] -= grad_x;
+      qDat0->grad_vars[gradVarIdx][0] += grad_x;
+      qDat1->grad_vars[gradVarIdx][0] -= grad_x;
 
-      grad_0[1] += grad_y;
-      grad_1[1] -= grad_y;
+      qDat0->grad_vars[gradVarIdx][1] += grad_y;
+      qDat1->grad_vars[gradVarIdx][1] -= grad_y;
 
 #ifdef P4_TO_P8
-      grad_0[2] += grad_z;
-      grad_1[2] -= grad_z;
+      qDat0->grad_vars[gradVarIdx][2] += grad_z;
+      qDat1->grad_vars[gradVarIdx][2] -= grad_z;
 #endif
     }
   }
@@ -202,13 +194,9 @@ void computeGradGauss(p4est_iter_face_info_t *info,
     | Side 0:  Large face 
     |----------------------------------------------------*/
     if (side[0]->is.full.is_ghost)
-      qData = &ghostData[side[0]->is.full.quadid];
+      qDat0 = &ghostData[side[0]->is.full.quadid];
     else
-      qData = (QuadData_t *) side[0]->is.full.quad->p.user_data;
-
-
-    var_0  = qData->vars[gradVarIdx];
-    grad_0 = qData->grad_vars[gradVarIdx];
+      qDat0 = (QuadData_t *) side[0]->is.full.quad->p.user_data;
 
     /*-----------------------------------------------------
     | Side 1:
@@ -218,22 +206,20 @@ void computeGradGauss(p4est_iter_face_info_t *info,
     for (i = 0; i < P4EST_HALF; i++)
     {
       if (side[1]->is.hanging.is_ghost[i])
-        qData = &ghostData[side[1]->is.hanging.quadid[i]];
+        qDat1 = &ghostData[side[1]->is.hanging.quadid[i]];
       else
-        qData = (QuadData_t*) side[1]->is.hanging.quad[i]->p.user_data;
-
-      var_1   = qData->vars[gradVarIdx];
-      grad_1  = qData->grad_vars[gradVarIdx];
-
-      const octDouble nx = qData->normals[iface][0];
-      const octDouble ny = qData->normals[iface][1];
-#ifdef P4_TO_P8
-      const octDouble nz = qData->normals[iface][2];
-#endif
+        qDat1 = (QuadData_t*) side[1]->is.hanging.quad[i]->p.user_data;
 
       /*---------------------------------------------------
       | Add flux contribution
       |--------------------------------------------------*/
+      const octDouble nx = qDat1->normals[iface][0];
+      const octDouble ny = qDat1->normals[iface][1];
+#ifdef P4_TO_P8
+      const octDouble nz = qDat1->normals[iface][2];
+#endif
+      const octDouble var_1  = qDat1->vars[gradVarIdx];
+      const octDouble var_0  = qDat0->vars[gradVarIdx];
       const octDouble var_f = 0.5 * (var_0 + var_1);
       
       const octDouble grad_x = nx * var_f;
@@ -242,15 +228,15 @@ void computeGradGauss(p4est_iter_face_info_t *info,
       const octDouble grad_z = nz * var_f;
 #endif
 
-      grad_0[0] -= grad_x;
-      grad_1[0] += grad_x;
+      qDat0->grad_vars[gradVarIdx][0] -= grad_x;
+      qDat1->grad_vars[gradVarIdx][0] += grad_x;
 
-      grad_0[1] -= grad_y;
-      grad_1[1] += grad_y;
+      qDat0->grad_vars[gradVarIdx][1] -= grad_y;
+      qDat1->grad_vars[gradVarIdx][1] += grad_y;
 
 #ifdef P4_TO_P8
-      grad_0[2] -= grad_z;
-      grad_1[2] += grad_z;
+      qDat0->grad_vars[gradVarIdx][2] -= grad_z;
+      qDat1->grad_vars[gradVarIdx][2] += grad_z;
 #endif
     }
   }
@@ -262,35 +248,29 @@ void computeGradGauss(p4est_iter_face_info_t *info,
     | Side 0: Large face 
     |----------------------------------------------------*/
     if (side[0]->is.full.is_ghost)
-      qData = &ghostData[side[0]->is.full.quadid];
+      qDat0 = &ghostData[side[0]->is.full.quadid];
     else
-      qData = (QuadData_t *) side[0]->is.full.quad->p.user_data;
-
-    var_0  = qData->vars[gradVarIdx];
-    grad_0 = qData->grad_vars[gradVarIdx];
-
-    const octDouble nx = qData->normals[iface][0];
-    const octDouble ny = qData->normals[iface][1];
-#ifdef P4_TO_P8
-    const octDouble nz = qData->normals[iface][2];
-#endif
+      qDat0 = (QuadData_t *) side[0]->is.full.quad->p.user_data;
 
     /*-----------------------------------------------------
     | Side 1:
     | Normal face 
     |----------------------------------------------------*/
     if (side[1]->is.full.is_ghost)
-      qData = &ghostData[side[1]->is.full.quadid];
+      qDat1 = &ghostData[side[1]->is.full.quadid];
     else
-      qData = (QuadData_t *) side[1]->is.full.quad->p.user_data;
-
-
-    var_1  = qData->vars[gradVarIdx];
-    grad_1 = qData->grad_vars[gradVarIdx];
+      qDat1 = (QuadData_t *) side[1]->is.full.quad->p.user_data;
 
     /*-----------------------------------------------------
     | Add flux contribution
     |----------------------------------------------------*/
+    const octDouble nx = qDat0->normals[iface][0];
+    const octDouble ny = qDat0->normals[iface][1];
+#ifdef P4_TO_P8
+    const octDouble nz = qDat0->normals[iface][2];
+#endif
+    const octDouble var_0  = qDat0->vars[gradVarIdx];
+    const octDouble var_1  = qDat1->vars[gradVarIdx];
     const octDouble var_f = 0.5 * (var_0 + var_1);
 
     const octDouble grad_x = nx * var_f;
@@ -299,15 +279,15 @@ void computeGradGauss(p4est_iter_face_info_t *info,
     const octDouble grad_z = nz * var_f;
 #endif
 
-    grad_0[0] += grad_x;
-    grad_1[0] -= grad_x;
+    qDat0->grad_vars[gradVarIdx][0] += grad_x;
+    qDat1->grad_vars[gradVarIdx][0] -= grad_x;
 
-    grad_0[1] += grad_y;
-    grad_1[1] -= grad_y;
+    qDat0->grad_vars[gradVarIdx][1] += grad_y;
+    qDat1->grad_vars[gradVarIdx][1] -= grad_y;
 
 #ifdef P4_TO_P8
-    grad_0[2] += grad_z;
-    grad_1[2] -= grad_z;
+    qDat0->grad_vars[gradVarIdx][2] += grad_z;
+    qDat1->grad_vars[gradVarIdx][2] -= grad_z;
 #endif
 
   }
@@ -361,6 +341,7 @@ void computeGradients(SimData_t *simData, int varIdx)
                 NULL,     // edge callback
 #endif
                 NULL);   // corner callback
+
 
 
 } /* computeGradients(...) */
