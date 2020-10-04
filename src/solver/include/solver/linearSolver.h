@@ -177,16 +177,6 @@ void linSolve_fieldCopy_cb(p4est_iter_volume_info_t *info,
 
 
 /***********************************************************
-* resetSolverBuffers()
-*-----------------------------------------------------------
-* Function sets all solver buffer variables to zero.
-*
-*   -> p4est_iter_volume_t callback function
-***********************************************************/
-void resetSolverBuffers(p4est_iter_volume_info_t *info,
-                        void *user_data);
-
-/***********************************************************
 * addRightHandSide()
 *-----------------------------------------------------------
 * Function adds the right hand side b to the

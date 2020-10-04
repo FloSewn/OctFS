@@ -81,16 +81,6 @@ typedef enum
 } VarIndex;
 
 /***********************************************************
-* Temporal schemes
-***********************************************************/
-typedef enum 
-{ 
-  EULER_EXPLICIT,
-  EULER_IMPLICIT,
-  CRANK_NICOLSON
-} TempScheme;
-
-/***********************************************************
 * Indices for buffer variables of linear solver that are
 * stored in the simParam struct
 ***********************************************************/
@@ -104,6 +94,16 @@ typedef enum
   PRES, /* residual                                       */
   PGRES /* global residual                                */
 } SimParamBufIndex;
+
+/***********************************************************
+* Temporal schemes
+***********************************************************/
+typedef enum 
+{ 
+  EULER_EXPLICIT,
+  EULER_IMPLICIT,
+  CRANK_NICOLSON
+} TempScheme;
 
 /***********************************************************
 * Typedefs for simData.h
