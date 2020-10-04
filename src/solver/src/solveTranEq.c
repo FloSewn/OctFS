@@ -44,23 +44,38 @@
 /***********************************************************
 * resetSolverBuffers_b()
 *-----------------------------------------------------------
-* Function sets all solver buffers b for every 
-* quad to zero and lets Ax_p point to b.
+* Function sets all solver buffers b for every quad
 *
 *   -> p4est_iter_cell_t callback function
 ***********************************************************/
 void resetSolverBuffers_b(p4est_iter_volume_info_t *info,
                            void *user_data)
 {
-  p4est_quadrant_t   *q = info->quad;
-
-  QuadData_t     *quadData = (QuadData_t *) q->p.user_data;
+  QuadData_t *quadData = (QuadData_t*)info->quad->p.user_data;
 
   int i; 
   for (i = 0; i < OCT_SOLVER_VARS; i++)
     quadData->vars[i]   = 0.0;
 
 } /* resetSolverBuffers_b() */
+
+/***********************************************************
+* resetSolverBuffers_Ax()
+*-----------------------------------------------------------
+* Function sets all solver buffers Ax for every quad
+*
+*   -> p4est_iter_cell_t callback function
+***********************************************************/
+void resetSolverBuffers_Ax(p4est_iter_volume_info_t *info,
+                           void *user_data)
+{
+  QuadData_t *quadData = (QuadData_t*)info->quad->p.user_data;
+  SimData_t  *simData  = (SimData_t*)info->p4est->user_pointer;
+
+  int AxId = simData->simParam->tmp_AxId;
+  quadData->vars[AxId] = 0.0;
+
+} /* resetSolverBuffers_Ax() */
 
 /***********************************************************
 * compute_b_tranEq()
@@ -161,12 +176,12 @@ void compute_Ax_tranEq(SimData_t *simData,
   p4est_iterate(simData->p4est,      
                 simData->ghost,      
                 (void *) simData->ghostData, 
-                NULL,             // quad callback
-                addFlux_conv_imp, // face callback
+                resetSolverBuffers_Ax,// quad callback
+                addFlux_conv_imp,     // face callback
 #ifdef P4_TO_P8
-                NULL,             // edge callback
+                NULL,                 // edge callback
 #endif
-                NULL);            // corner callback
+                NULL);                // corner callback
 
   /*--------------------------------------------------------
   | Add diffusive fluxes

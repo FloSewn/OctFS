@@ -41,6 +41,48 @@
 #include <p8est_iterate.h>
 #endif
 
+/***********************************************************
+* linSolve_calcGlobResidual()
+*-----------------------------------------------------------
+* Linear solver function for the calculaiton of the global 
+* residual.
+* The local residual is always stored in vars[SRES] and
+* the global residual is stored in sbuf[PRES]
+***********************************************************/
+octDouble linSolve_calcGlobResidual(SimData_t *simData,
+                                    computeAx  cmpAx,
+                                    int         xId,
+                                    int        AxId,
+                                    int         bId)
+{
+  SimParam_t *simParam = simData->simParam;
+
+  const int       n_elements  = simParam->n_elements_glob;
+  const octDouble n_inv       = 1. / (octDouble) n_elements;
+
+  /*--------------------------------------------------------
+  | vars[AxId] = A * vars[xId]
+  | reset simParam->tmp_xId to xId, since its changed 
+  | inside cmpAx()
+  --------------------------------------------------------*/
+  int xId_old = simParam->tmp_xId;
+  cmpAx(simData, xId, AxId);
+  simParam->tmp_xId = xId_old;
+
+  /*--------------------------------------------------------
+  | vars[SRES] = (1.0)*vars[bId] + (-1.0)*vars[AxId] 
+  --------------------------------------------------------*/
+  linSolve_fieldSum(simData, bId, AxId, SRES, 1.0,  -1.0);
+
+  /*--------------------------------------------------------
+  | sbuf[PRES] = sum( vars[SRES] * vars[SRES] )
+  --------------------------------------------------------*/
+  linSolve_scalarProd(simData, SRES, SRES, PRES);
+  simParam->sbuf[PRES] = n_inv * sqrt(simParam->sbuf[PRES]);
+
+  return simParam->sbuf[PRES];
+
+} /* linSolve_calcGlobResidual() */
 
 /***********************************************************
 * linSolve_exchangeScalarBuffer()
@@ -326,25 +368,6 @@ void linSolve_fieldCopy_cb(p4est_iter_volume_info_t *info,
 } /* linSolve_fieldCopy_cb() */
 
 
-/***********************************************************
-* resetSolverBuffers()
-*-----------------------------------------------------------
-* Function sets all solver buffer variables to zero.
-*
-*   -> p4est_iter_volume_t callback function
-***********************************************************/
-void resetSolverBuffers(p4est_iter_volume_info_t *info,
-                        void *user_data)
-{
-  QuadData_t *quadData = (QuadData_t*)info->quad->p.user_data;
-
-  int i;
-
-  for (i = 0; i < OCT_SOLVER_VARS; i++)
-    quadData->vars[i] = 0.0;
-
-
-} /* resetSolverBuffers_Ax() */
 
 /***********************************************************
 * addRightHandSide()
@@ -392,27 +415,26 @@ void linSolve_bicgstab(SimData_t *simData,
 {
   SimParam_t *simParam  = simData->simParam;
   int n_elements        = simParam->n_elements_glob;
-
   const octDouble n_inv = 1. / (octDouble) n_elements;
 
-  /*--------------------------------------------------------
-  | Init scalars
-  --------------------------------------------------------*/
-  int i, k = 0;
+  int k = 0;
 
-  simParam->sbuf[PR0] = 1.0;
-  simParam->sbuf[PA]  = 1.0;
-  simParam->sbuf[PO]  = 1.0;
-  simParam->sbuf[PR]  = 0.0;
-  simParam->sbuf[PB]  = 0.0;
+  /*--------------------------------------------------------
+  | Init scalar solver buffers
+  --------------------------------------------------------*/
+  simParam->sbuf[PR0]   = 1.0;
+  simParam->sbuf[PA]    = 1.0;
+  simParam->sbuf[PO]    = 1.0;
+  simParam->sbuf[PR]    = 0.0;
+  simParam->sbuf[PB]    = 0.0;
   simParam->sbuf[PRES]  = 0.0;
   simParam->sbuf[PGRES] = 0.0;
 
   /*--------------------------------------------------------
   | Threshold parameters
   --------------------------------------------------------*/
-  int kMin = 2;
-  int kMax = 4;
+  int kMin = 4;
+  int kMax = 8;
 
   octDouble eps = 1e-4;
 
@@ -490,23 +512,10 @@ void linSolve_bicgstab(SimData_t *simData,
                       1.0,  simParam->sbuf[PA]);
 
     /*------------------------------------------------------
-    | vars[SAX] = A * vars[SH]
-    | reset simParam->tmp_xId to xId, since its changed 
-    | inside cmpAx()
+    | Calculate global residual for the equation system
+    | A*h = b and store it in sbuf[PRES]
     ------------------------------------------------------*/
-    cmpAx(simData, SH, SAX);
-    simParam->tmp_xId = xId;
-
-    /*------------------------------------------------------
-    | vars[SRES] = (1.0)*vars[SB] + (-1.0)*vars[SAX] 
-    ------------------------------------------------------*/
-    linSolve_fieldSum(simData, SB, SAX, SRES, 1.0,  -1.0);
-
-    /*------------------------------------------------------
-    | sbuf[PRES] = sum( vars[SRES] * vars[SRES] )
-    ------------------------------------------------------*/
-    linSolve_scalarProd(simData, SRES, SRES, PRES);
-    simParam->sbuf[PRES] = n_inv * sqrt(simParam->sbuf[PRES]);
+    linSolve_calcGlobResidual(simData, cmpAx, SH, SAX, SB);
 
     /*------------------------------------------------------
     | Check if vars[SH] is accuarte enough
@@ -519,9 +528,52 @@ void linSolve_bicgstab(SimData_t *simData,
     }
 
     /*------------------------------------------------------
-    | 
+    | vars[SS] = (1.0)*vars[SR] + (-sbuf[PA])*vars[SV]
     ------------------------------------------------------*/
+    linSolve_fieldSum(simData, SR, SV, SS, 
+                      1.0,  -simParam->sbuf[PA]);
 
+    /*------------------------------------------------------
+    | vars[ST] = A*vars[SS]
+    ------------------------------------------------------*/
+    cmpAx(simData, SS, ST);
+    simParam->tmp_xId = xId;
+
+    /*------------------------------------------------------
+    | sbuf[PO] = sum( vars[ST] * vars[ST] )
+    ------------------------------------------------------*/
+    linSolve_scalarProd(simData, ST, ST, PO);
+    omega = 1. / (simParam->sbuf[PO] + SMALL);
+
+    /*------------------------------------------------------
+    | sbuf[PO] = sum( vars[ST] * vars[SS] )
+    ------------------------------------------------------*/
+    linSolve_scalarProd(simData, ST, SS, PO);
+    simParam->sbuf[PO] *= omega;
+
+    /*------------------------------------------------------
+    | vars[xId] = (1.0)*vars[SH] + (sbuf[PO])*vars[SS]
+    ------------------------------------------------------*/
+    linSolve_fieldSum(simData, SH, SS, xId, 
+                      1.0,  simParam->sbuf[PO]);
+
+    /*------------------------------------------------------
+    | Calculate global residual for the equation system
+    | A*h = b and store it in sbuf[PRES]
+    ------------------------------------------------------*/
+    linSolve_calcGlobResidual(simData, cmpAx, xId, SAX, SB);
+
+    /*------------------------------------------------------
+    | Check if vars[xId] is accuarte enough
+    ------------------------------------------------------*/
+    if ( simParam->sbuf[PRES] < eps && k > kMin )
+      break;
+
+    /*------------------------------------------------------
+    | vars[SR] = (1.0)*vars[SS] + (-sbuf[PO])*vars[ST]
+    ------------------------------------------------------*/
+    linSolve_fieldSum(simData, SS, ST, SR, 
+                      1.0, -simParam->sbuf[PO]);
 
   } /* while( k < kMax ) */
 
@@ -570,18 +622,6 @@ void solve_implicit_sequential(SimData_t *simData,
 {
   SimParam_t *simParam = simData->simParam;
   simParam->tmp_xId    = xId;
-
-  /*--------------------------------------------------------
-  | Initialize Krylov solver buffer variables
-  --------------------------------------------------------*/
-  p4est_iterate(simData->p4est, simData->ghost, 
-                (void *) simData->ghostData,
-                resetSolverBuffers, // cell callback
-                NULL,              // face callback
-#ifdef P4_TO_P8
-                NULL,              // edge callback
-#endif
-                NULL);             // corner callback*/
 
   /*--------------------------------------------------------
   | Solve linear equation system using Krylov solver

@@ -263,13 +263,13 @@ void writeSolutionVtk(SimData_t *simData, int step)
                               OCT_MAX_VARS - OCT_SOLVER_VARS - 1,
 #endif
                               0, 
+                              varNames[16], var_interp[16], 
                               varNames[0], var_interp[0], 
-                              varNames[2], var_interp[2], 
 #ifdef P4_TO_P8
                               varNames[3], var_interp[3], 
 #endif
+                              varNames[1], var_interp[1], 
                               varNames[3], var_interp[3], 
-                              varNames[5], var_interp[5], 
                               varNames[7], var_interp[7], 
                               context);    
   SC_CHECK_ABORT(context != NULL,

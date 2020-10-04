@@ -190,7 +190,7 @@ SimParam_t *init_simParam(octInitFun   usrInitFun,
   simParam->volume_loc      = 0.0;
 
   simParam->timestep      = 5e-3;
-  simParam->simTimeTot    = 5e-3;
+  simParam->simTimeTot    = 1.0; //5e-3;
   simParam->simTime       = 0.0;
 
   simParam->tempScheme     = CRANK_NICOLSON;
