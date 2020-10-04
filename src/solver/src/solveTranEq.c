@@ -42,30 +42,6 @@
 #endif
 
 /***********************************************************
-* setSolverBuffer()
-*-----------------------------------------------------------
-* Function sets the solver buffer pointer sbuf_p for every 
-* quad.
-*
-*   -> p4est_iter_cell_t callback function
-***********************************************************/
-void setSolverBuffer(p4est_iter_volume_info_t *info,
-                     void *user_data)
-{
-  p4est_quadrant_t   *q = info->quad;
-  QuadData_t     *quadData = (QuadData_t *) q->p.user_data;
-
-  p4est_t    *p4est    = info->p4est;
-  SimData_t  *simData  = (SimData_t *) p4est->user_pointer;
-  SimParam_t *simParam = simData->simParam;
-
-  int sbufIdx = simParam->tmp_sbufIdx;
-
-  quadData->Ax_p = quadData->sbuf[sbufIdx];
-
-} /* setSolverBuffer() */
-
-/***********************************************************
 * resetSolverBuffers_b()
 *-----------------------------------------------------------
 * Function sets all solver buffers b for every 
@@ -81,10 +57,8 @@ void resetSolverBuffers_b(p4est_iter_volume_info_t *info,
   QuadData_t     *quadData = (QuadData_t *) q->p.user_data;
 
   int i; 
-  for (i = 0; i < OCT_MAX_VARS; i++)
-    quadData->sbuf[LS_B][i]   = 0.0;
-
-  quadData->Ax_p = quadData->sbuf[LS_B];
+  for (i = 0; i < OCT_SOLVER_VARS; i++)
+    quadData->vars[i]   = 0.0;
 
 } /* resetSolverBuffers_b() */
 
@@ -96,7 +70,7 @@ void resetSolverBuffers_b(p4est_iter_volume_info_t *info,
 *   Ax = b 
 * that underlies a discretized transport equation.
 ***********************************************************/
-void compute_b_tranEq(SimData_t *simData, int varIdx)
+void compute_b_tranEq(SimData_t *simData, int xId)
 {
   /*--------------------------------------------------------
   | Compute flux factors for chosen discretization scheme
@@ -104,13 +78,13 @@ void compute_b_tranEq(SimData_t *simData, int varIdx)
   SimParam_t *simParam  = simData->simParam;
   int         scheme    = simParam->tempScheme;
   simParam->tmp_fluxFac = simParam->tempFluxFac[scheme]-1.0;
-  simParam->tmp_varIdx  = varIdx;
-  simParam->tmp_sbufIdx = LS_B;
+  simParam->tmp_xId     = xId;
+  simParam->tmp_AxId    = SB;
 
   /*--------------------------------------------------------
   | Update gradient
   --------------------------------------------------------*/
-  computeGradients(simData, varIdx); 
+  computeGradients(simData, xId); 
 
   /*--------------------------------------------------------
   | Add convective fluxes
@@ -145,6 +119,13 @@ void compute_b_tranEq(SimData_t *simData, int varIdx)
 #endif
                 NULL);                 // corner callback
 
+  /*--------------------------------------------------------
+  | Exchange data
+  --------------------------------------------------------*/
+  p4est_ghost_exchange_data(simData->p4est, 
+                            simData->ghost, 
+                            simData->ghostData);
+
 } /* compute_b_tranEq() */
 
 /***********************************************************
@@ -156,7 +137,7 @@ void compute_b_tranEq(SimData_t *simData, int varIdx)
 * that underlies a discretized transport equation.
 ***********************************************************/
 void compute_Ax_tranEq(SimData_t *simData, 
-                       int        varIdx, 
+                       int        xId, 
                        int        sbufIdx)
 {
   /*--------------------------------------------------------
@@ -166,25 +147,13 @@ void compute_Ax_tranEq(SimData_t *simData,
 
   int scheme            = simParam->tempScheme;
   simParam->tmp_fluxFac = simParam->tempFluxFac[scheme];
-  simParam->tmp_varIdx  = varIdx;
-  simParam->tmp_sbufIdx = sbufIdx;
+  simParam->tmp_xId     = xId;
+  simParam->tmp_AxId    = sbufIdx;
 
   /*--------------------------------------------------------
   | Update gradient
   --------------------------------------------------------*/
-  computeGradients(simData, varIdx); 
-
-  /*--------------------------------------------------------
-  | Empty buffer and set pointer Ax_p to b
-  --------------------------------------------------------*/
-  p4est_iterate(simData->p4est, simData->ghost, 
-                (void *) simData->ghostData,
-                setSolverBuffer, // cell callback
-                NULL,            // face callback
-#ifdef P4_TO_P8
-                NULL,            // edge callback
-#endif
-                NULL);           // corner callback
+  computeGradients(simData, xId); 
 
   /*--------------------------------------------------------
   | Add convective fluxes
@@ -219,15 +188,22 @@ void compute_Ax_tranEq(SimData_t *simData,
 #endif
                 NULL);                 // corner callback
 
+  /*--------------------------------------------------------
+  | Exchange data
+  --------------------------------------------------------*/
+  p4est_ghost_exchange_data(simData->p4est, 
+                            simData->ghost, 
+                            simData->ghostData);
+
 } /* compute_Ax_tranEq() */
 
 /***********************************************************
 * solveTranEq()
 *-----------------------------------------------------------
 * Function to solve a transport equation for a specified
-* variable <varIdx>.
+* variable <xId>.
 ***********************************************************/
-void solveTranEq(SimData_t *simData, int varIdx)
+void solveTranEq(SimData_t *simData, int xId)
 {
   SimParam_t *simParam = simData->simParam;
   int         scheme   = simParam->tempScheme;
@@ -235,14 +211,14 @@ void solveTranEq(SimData_t *simData, int varIdx)
   /*--------------------------------------------------------
   | Compute right hand side b
   --------------------------------------------------------*/
-  compute_b_tranEq(simData, varIdx);
+  compute_b_tranEq(simData, xId);
 
   /*--------------------------------------------------------
   | Solve transport equation using explicit solver
   --------------------------------------------------------*/
   if (scheme == EULER_EXPLICIT)
   {
-    solve_explicit_sequential(simData, varIdx);
+    solve_explicit_sequential(simData, xId);
   }
   /*--------------------------------------------------------
   | Solve transport equation using Krylov solver
@@ -252,7 +228,7 @@ void solveTranEq(SimData_t *simData, int varIdx)
   {
     solve_implicit_sequential(simData, 
                               compute_Ax_tranEq, 
-                              varIdx);
+                              xId);
   }
 
   /*--------------------------------------------------------

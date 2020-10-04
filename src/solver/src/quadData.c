@@ -84,7 +84,6 @@ void init_quadFlowData(QuadData_t *quadData)
   for (i = 0; i < OCT_MAX_VARS; i++)
   {
     quadData->vars[i]     = 0.0;
-    quadData->vars_buf[i] = 0.0;
 
     for (j = 0; j < P4EST_DIM; j++)
     {
@@ -97,16 +96,16 @@ void init_quadFlowData(QuadData_t *quadData)
 
   /*--------------------------------------------------------
   | buffers for flow solver 
-  --------------------------------------------------------*/
+  --------------------------------------------------------*
   quadData->Ax_p = NULL;
 
   for (i = 0; i < OCT_MAX_VARS; i++)
   {
     quadData->res[i] = 0.0;
 
-    for (j = 0; j < SOLVER_BUF_VARS; j++)
+    for (j = 0; j < QUAD_BUF_VARS; j++)
       quadData->sbuf[j][i] = 0.0;
-  }
+  }*/
 
 
 } /* init_quadFlowData() */

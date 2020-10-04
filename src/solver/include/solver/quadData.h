@@ -74,15 +74,6 @@ typedef struct QuadData_t
   octDouble vars[OCT_MAX_VARS];
   // State variable gradients 
   octDouble grad_vars[OCT_MAX_VARS][P4EST_DIM];
-  // State variable  buffers 
-  octDouble vars_buf[OCT_MAX_VARS];
-
-  /*--------------------------------------------------------
-  | Solver buffer data
-  --------------------------------------------------------*/
-  octDouble *Ax_p;
-  octDouble  res[OCT_MAX_VARS];
-  octDouble  sbuf[SOLVER_BUF_VARS][OCT_MAX_VARS];
 
 } QuadData_t;
 

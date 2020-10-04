@@ -43,36 +43,287 @@
 
 
 /***********************************************************
-* calcResiualDirection()
+* linSolve_exchangeScalarBuffer()
 *-----------------------------------------------------------
-* Calculate the direction (b - Ax) and compute initial
-* squared residual norm r^2 = sum_i{ (b_i-Ax_i)^2 }
-*
-*   -> p4est_iter_volume_t callback function
+* Linear solver function to sum a scalar buffer 
+* variable over all MPI processes 
 ***********************************************************/
-void calcResidualDirection(p4est_iter_volume_info_t *info,
+void linSolve_exchangeScalarBuffer(SimData_t      *simData, 
+                                   int             sbufId,
+                                   sc_MPI_Datatype varType,
+                                   sc_MPI_Op       mpiType)
+{
+  SimParam_t *simParam = simData->simParam;
+
+  octDouble buf = simParam->sbuf[sbufId];
+
+  sc_MPI_Allreduce(&buf, &simParam->sbuf[sbufId],
+                   1, varType, mpiType,
+                   simData->mpiParam->mpiComm);
+
+} /* linSolve_exchangeScalarBuffer() */
+
+/***********************************************************
+* linSolve_scalarProd()
+*-----------------------------------------------------------
+* Linear solver function to multiply two field variables 
+* a and b according to
+*
+*   c = a_i * b_i
+*
+* and store the in a scalar variable c.
+***********************************************************/
+void linSolve_scalarProd(SimData_t *simData, 
+                         int aId, int bId, int cId)
+{
+  int prodBuf[3] = { aId, bId, cId };
+
+  SimParam_t *simParam = simData->simParam;
+
+  simParam->sbuf[cId] = 0.0;
+
+  p4est_iterate(simData->p4est, NULL, (void *) prodBuf,
+                linSolve_scalarProd_cb, // cell callback
+                NULL,                   // face callback
+#ifdef P4_TO_P8
+                NULL,                   // edge callback
+#endif
+                NULL);                  // corner callback*/
+
+  /*--------------------------------------------------------
+  | Exchange data among all processes
+  --------------------------------------------------------*/
+  linSolve_exchangeScalarBuffer(simData, cId, 
+                                  sc_MPI_DOUBLE, 
+                                  sc_MPI_SUM);
+
+} /* linSolve_scalarProd() */
+
+/***********************************************************
+* linSolve_fieldProd()
+*-----------------------------------------------------------
+* Linear solver function to multiply two field variables 
+* a and b according to
+*
+*   c_i = a_i * b_i
+*
+* and store the in another field variable c.
+***********************************************************/
+void linSolve_fieldProd(SimData_t *simData, 
+                        int aId, int bId, int cId)
+{
+  int prodBuf[3] = { aId, bId, cId };
+
+  p4est_iterate(simData->p4est, NULL, (void *) prodBuf,
+                linSolve_fieldProd_cb, // cell callback
+                NULL,                  // face callback
+#ifdef P4_TO_P8
+                NULL,                  // edge callback
+#endif
+                NULL);                 // corner callback*/
+
+} /* linSolve_fieldProd() */
+
+/***********************************************************
+* linSolve_scalarSum()
+*-----------------------------------------------------------
+* Linear solver function to add two field variables 
+* a and b according to
+*
+*   c = w_a * a_i + w_b * b_i
+*
+* and store the in a scalar variable c.
+***********************************************************/
+void linSolve_scalarSum(SimData_t *simData, 
+                        int aId, int bId, int cId,
+                        octDouble w_a, octDouble w_b)
+{
+  octDouble sumBuf[5] = { (octDouble) aId,
+                          (octDouble) bId,
+                          (octDouble) cId,
+                           w_a, w_b };
+
+  SimParam_t *simParam = simData->simParam;
+
+  simParam->sbuf[cId] = 0.0;
+
+  p4est_iterate(simData->p4est, NULL, (void *) sumBuf,
+                linSolve_scalarSum_cb, // cell callback
+                NULL,                 // face callback
+#ifdef P4_TO_P8
+                NULL,                 // edge callback
+#endif
+                NULL);                // corner callback*/
+
+} /* linSolve_scalarSum() */
+
+/***********************************************************
+* linSolve_fieldSum()
+*-----------------------------------------------------------
+* Linear solver function to add two field variables a and b
+* according to
+*
+*   c_i = w_a * a_i + w_b * b_i
+*
+* and store the in another field variable c.
+***********************************************************/
+void linSolve_fieldSum(SimData_t *simData, 
+                       int aId, int bId, int cId, 
+                       octDouble w_a, octDouble w_b)
+{
+  octDouble sumBuf[5] = { (octDouble) aId,
+                          (octDouble) bId,
+                          (octDouble) cId,
+                           w_a, w_b };
+
+  p4est_iterate(simData->p4est, NULL, (void *) sumBuf,
+                linSolve_fieldSum_cb, // cell callback
+                NULL,                 // face callback
+#ifdef P4_TO_P8
+                NULL,                 // edge callback
+#endif
+                NULL);                // corner callback*/
+
+} /* linSolve_fieldSum() */
+
+/***********************************************************
+* linSolve_fieldCopy()
+*-----------------------------------------------------------
+* Linear solver function to add two field variables a into
+* a field variable b
+***********************************************************/
+void linSolve_fieldCopy(SimData_t *simData, 
+                       int aId, int bId)
+{
+  int cpyBuf[2] = {  aId, bId };
+
+  p4est_iterate(simData->p4est, NULL, (void *) cpyBuf,
+                linSolve_fieldCopy_cb, // cell callback
+                NULL,                  // face callback
+#ifdef P4_TO_P8
+                NULL,                  // edge callback
+#endif
+                NULL);                 // corner callback*/
+
+} /* linSolve_fieldCopy() */
+
+
+
+/***********************************************************
+* linSolve_fieldSum_cb()
+*-----------------------------------------------------------
+* p4est_iter_volume_t callback function for 
+* linSolve_fieldSum()
+***********************************************************/
+void linSolve_fieldSum_cb(p4est_iter_volume_info_t *info,
+                          void *user_data)
+{
+  QuadData_t *quadData = (QuadData_t*)info->quad->p.user_data;
+
+  int aId = (int)((octDouble *) user_data)[0];
+  int bId = (int)((octDouble *) user_data)[1];
+  int cId = (int)((octDouble *) user_data)[2];
+
+  octDouble w_a = ((octDouble *) user_data)[3];
+  octDouble w_b = ((octDouble *) user_data)[4];
+
+  octDouble a = quadData->vars[aId];
+  octDouble b = quadData->vars[bId];
+
+  quadData->vars[cId] = w_a*a + w_b*b;
+
+} /* linSolve_fieldSum_cb() */
+
+/***********************************************************
+* linSolve_scalarSum_cb()
+*-----------------------------------------------------------
+* p4est_iter_volume_t callback function for 
+* linSolve_scalarSum()
+***********************************************************/
+void linSolve_scalarSum_cb(p4est_iter_volume_info_t *info,
                            void *user_data)
 {
-  p4est_quadrant_t  *q = info->quad;
-  QuadData_t *quadData = (QuadData_t *) q->p.user_data;
+  QuadData_t *quadData = (QuadData_t*)info->quad->p.user_data;
+  SimData_t  *simData  = (SimData_t*)info->p4est->user_pointer;
+  SimParam_t *simParam = simData->simParam;
 
-  p4est_t    *p4est    = info->p4est;
-  SimData_t  *simData  = (SimData_t *) p4est->user_pointer;
+  int aId = (int)((octDouble *) user_data)[0];
+  int bId = (int)((octDouble *) user_data)[1];
+  int cId = (int)((octDouble *) user_data)[2];
 
-  SimParam_t *simParam  = simData->simParam;
-  int         varIdx    = simParam->tmp_varIdx;
+  octDouble w_a = ((octDouble *) user_data)[3];
+  octDouble w_b = ((octDouble *) user_data)[4];
 
-  octDouble Ax = quadData->sbuf[LS_AX][varIdx];
-  octDouble b  = quadData->sbuf[LS_B][varIdx];
+  octDouble a = quadData->vars[aId];
+  octDouble b = quadData->vars[bId];
 
-  octDouble dir = b - Ax;
+  simParam->sbuf[cId] += w_a*a + w_b*b;
 
-  quadData->sbuf[LS_R][varIdx]  = dir;
-  quadData->sbuf[LS_R0][varIdx] = dir;
+} /* linSolve_scalarSum_cb() */
 
-  simParam->tmp_globRes += dir * dir;
+/***********************************************************
+* linSolve_fieldProd_cb()
+*-----------------------------------------------------------
+* p4est_iter_volume_t callback function for 
+* linSolve_fieldProd()
+***********************************************************/
+void linSolve_fieldProd_cb(p4est_iter_volume_info_t *info,
+                           void *user_data)
+{
+  QuadData_t *quadData = (QuadData_t*)info->quad->p.user_data;
 
-} /* calcResidualDirection() */
+  int aId = ((int *) user_data)[0];
+  int bId = ((int *) user_data)[1];
+  int cId = ((int *) user_data)[2];
+
+  octDouble a = quadData->vars[aId];
+  octDouble b = quadData->vars[bId];
+
+  quadData->vars[cId] = a * b;
+
+} /* linSolve_fieldProd_cb() */
+
+/***********************************************************
+* linSolve_scalarProd_cb()
+*-----------------------------------------------------------
+* p4est_iter_volume_t callback function for 
+* linSolve_scalarProd()
+***********************************************************/
+void linSolve_scalarProd_cb(p4est_iter_volume_info_t *info,
+                            void *user_data)
+{
+  QuadData_t *quadData = (QuadData_t*)info->quad->p.user_data;
+  SimData_t  *simData  = (SimData_t*)info->p4est->user_pointer;
+  SimParam_t *simParam = simData->simParam;
+
+  int aId = ((int *) user_data)[0];
+  int bId = ((int *) user_data)[1];
+  int cId = ((int *) user_data)[2];
+
+  octDouble a = quadData->vars[aId];
+  octDouble b = quadData->vars[bId];
+
+  simParam->sbuf[cId] += a * b;
+
+} /* linSolve_scalarProd_cb() */
+
+/***********************************************************
+* linSolve_fieldCopy_cb()
+*-----------------------------------------------------------
+* p4est_iter_volume_t callback function for 
+* linSolve_fieldCopy()
+***********************************************************/
+void linSolve_fieldCopy_cb(p4est_iter_volume_info_t *info,
+                           void *user_data)
+{
+  QuadData_t *quadData = (QuadData_t*)info->quad->p.user_data;
+
+  int aId = ((int *) user_data)[0];
+  int bId = ((int *) user_data)[1];
+
+  quadData->vars[bId] = quadData->vars[aId];
+
+} /* linSolve_fieldCopy_cb() */
 
 
 /***********************************************************
@@ -85,19 +336,12 @@ void calcResidualDirection(p4est_iter_volume_info_t *info,
 void resetSolverBuffers(p4est_iter_volume_info_t *info,
                         void *user_data)
 {
-  p4est_quadrant_t  *q = info->quad;
-  QuadData_t *quadData = (QuadData_t *) q->p.user_data;
+  QuadData_t *quadData = (QuadData_t*)info->quad->p.user_data;
 
-  int i,j;
+  int i;
 
-
-  for (j = 0; j < OCT_MAX_VARS; j++)
-  {
-    for (i = 0; i < SOLVER_BUF_VARS; i++)
-      quadData->sbuf[i][j] = 0.0;
-
-    quadData->res[j] = 0.0;
-  }
+  for (i = 0; i < OCT_SOLVER_VARS; i++)
+    quadData->vars[i] = 0.0;
 
 
 } /* resetSolverBuffers_Ax() */
@@ -119,16 +363,15 @@ void addRightHandSide(p4est_iter_volume_info_t *info,
   SimData_t  *simData  = (SimData_t *) p4est->user_pointer;
   QuadData_t *quadData = (QuadData_t *) q->p.user_data;
 
-  SimParam_t *simParam  = simData->simParam;
-  int         varIdx    = simParam->tmp_varIdx;
+  SimParam_t *simParam = simData->simParam;
+  int         xId      = simParam->tmp_xId;
 
+  const octDouble vol     = quadData->volume;
+  const octDouble dt      = simParam->timestep;
+  const octDouble rho     = quadData->vars[IRHO];
+  const octDouble b       = quadData->vars[SB];
 
-  octDouble vol     = quadData->volume;
-  octDouble dt      = simParam->timestep;
-  octDouble rho     = quadData->vars[IRHO];
-  octDouble fac     = dt / (vol * rho);
-
-  quadData->vars[varIdx] = quadData->sbuf[LS_B][varIdx] * fac;
+  quadData->vars[xId] = b * dt / vol / rho;
 
 } /* addRightHandSide() */
 
@@ -145,50 +388,142 @@ void addRightHandSide(p4est_iter_volume_info_t *info,
 ***********************************************************/
 void linSolve_bicgstab(SimData_t *simData,
                        computeAx  cmpAx,
-                       int        varIdx)
+                       int        xId)
 {
   SimParam_t *simParam  = simData->simParam;
+  int n_elements        = simParam->n_elements_glob;
+
+  const octDouble n_inv = 1. / (octDouble) n_elements;
 
   /*--------------------------------------------------------
   | Init scalars
   --------------------------------------------------------*/
   int i, k = 0;
 
-  octDouble rho_0   = 1.0;
-  octDouble alpha   = 1.0;
-  octDouble omega   = 1.0;
-  octDouble rho     = 1.0;
-  octDouble beta    = 0.0;
-  octDouble abs_res = 0.0;
+  simParam->sbuf[PR0] = 1.0;
+  simParam->sbuf[PA]  = 1.0;
+  simParam->sbuf[PO]  = 1.0;
+  simParam->sbuf[PR]  = 0.0;
+  simParam->sbuf[PB]  = 0.0;
+  simParam->sbuf[PRES]  = 0.0;
+  simParam->sbuf[PGRES] = 0.0;
 
   /*--------------------------------------------------------
   | Threshold parameters
   --------------------------------------------------------*/
   int kMin = 2;
-  int kMax = 10;
+  int kMax = 4;
+
+  octDouble eps = 1e-4;
 
   /*--------------------------------------------------------
   | Compute new Ax
   --------------------------------------------------------*/
-  cmpAx(simData, varIdx, LS_AX);
+  cmpAx(simData, xId, SAX);
 
   /*--------------------------------------------------------
-  | Compute direction (b - Ax)
-  | and compute initial residual norm
+  | vars[SR] = (1.0)*vars[SB] + (-1.0)*vars[SAX]
   --------------------------------------------------------*/
-  simParam->tmp_globRes = 0.0;
+  linSolve_fieldSum(simData, SB, SAX, SR, 1.0, -1.0);
 
-  p4est_iterate(simData->p4est, simData->ghost, 
-                (void *) simData->ghostData,
-                calcResidualDirection, // cell callback
-                NULL,                  // face callback
-#ifdef P4_TO_P8
-                NULL,                  // edge callback
-#endif
-                NULL);                 // corner callback*/
+  /*--------------------------------------------------------
+  | vars[SR0] = vars[SR] 
+  --------------------------------------------------------*/
+  linSolve_fieldCopy(simData, SR, SR0);
 
-  octPrint("GLOBAL RESIDUAL: %lf", simParam->tmp_globRes);
+  /*--------------------------------------------------------
+  | sbuf[PGRES] = sqrt( sum( vars[SR] * vars[SR] ) ) / N
+  --------------------------------------------------------*/
+  linSolve_scalarProd(simData, SR, SR, PGRES);
+  simParam->sbuf[PGRES] = n_inv * sqrt(simParam->sbuf[PGRES]);
 
+  while( k < kMax )
+  {
+    k++;
+
+    /*------------------------------------------------------
+    | sbuf[PR] = sum( vars[SR0] * vars[SR] )
+    ------------------------------------------------------*/
+    linSolve_scalarProd(simData, SR0, SR, PR);
+
+    /*------------------------------------------------------
+    | Update buffers beta (PB) and rho_0 (PR0) 
+    ------------------------------------------------------*/
+    octDouble rho   = simParam->sbuf[PR];
+    octDouble rho_0 = simParam->sbuf[PR0];
+    octDouble alpha = simParam->sbuf[PA];
+    octDouble omega = simParam->sbuf[PO];
+
+    simParam->sbuf[PB]  = (rho / (SMALL+rho_0)) 
+                        * (alpha / (SMALL+omega));
+    simParam->sbuf[PR0] = rho;
+
+    /*------------------------------------------------------
+    | 1) vars[SP] = (1.0)*vars[SP] + (-sbuf[PO])*vars[SV]
+    | 2) vars[SP] = (1.0)*vars[SR] + ( sbuf[PB])*vars[SP]
+    ------------------------------------------------------*/
+    linSolve_fieldSum(simData, SP, SV, SP, 
+                      1.0, -simParam->sbuf[PO]);
+    linSolve_fieldSum(simData, SR, SP, SP, 
+                      1.0,  simParam->sbuf[PB]);
+
+    /*------------------------------------------------------
+    | Compute v = A*p
+    | reset simParam->tmp_xId to xId, since its changed 
+    | inside cmpAx()
+    ------------------------------------------------------*/
+    cmpAx(simData, SP, SV);
+    simParam->tmp_xId = xId;
+
+    /*------------------------------------------------------
+    | sbuf[PA] = sum( vars[SR0] * vars[SV] )
+    ------------------------------------------------------*/
+    linSolve_scalarProd(simData, SR0, SV, PA);
+
+    alpha = 1. / (SMALL + simParam->sbuf[PA]);
+    simParam->sbuf[PA] = alpha * simParam->sbuf[PR]; 
+
+    /*------------------------------------------------------
+    | vars[SH] = (1.0)*vars[xId] + (sbuf[PA])*vars[SP]
+    ------------------------------------------------------*/
+    linSolve_fieldSum(simData, xId, SP, SH, 
+                      1.0,  simParam->sbuf[PA]);
+
+    /*------------------------------------------------------
+    | vars[SAX] = A * vars[SH]
+    | reset simParam->tmp_xId to xId, since its changed 
+    | inside cmpAx()
+    ------------------------------------------------------*/
+    cmpAx(simData, SH, SAX);
+    simParam->tmp_xId = xId;
+
+    /*------------------------------------------------------
+    | vars[SRES] = (1.0)*vars[SB] + (-1.0)*vars[SAX] 
+    ------------------------------------------------------*/
+    linSolve_fieldSum(simData, SB, SAX, SRES, 1.0,  -1.0);
+
+    /*------------------------------------------------------
+    | sbuf[PRES] = sum( vars[SRES] * vars[SRES] )
+    ------------------------------------------------------*/
+    linSolve_scalarProd(simData, SRES, SRES, PRES);
+    simParam->sbuf[PRES] = n_inv * sqrt(simParam->sbuf[PRES]);
+
+    /*------------------------------------------------------
+    | Check if vars[SH] is accuarte enough
+    | if yes -> set as new solution and resume
+    ------------------------------------------------------*/
+    if ( simParam->sbuf[PRES] < eps && k > kMin )
+    {
+      linSolve_fieldCopy(simData, SH, xId);
+      break;
+    }
+
+    /*------------------------------------------------------
+    | 
+    ------------------------------------------------------*/
+
+
+  } /* while( k < kMax ) */
 
 
 } /* linSolve_bicgstab() */
@@ -202,10 +537,10 @@ void linSolve_bicgstab(SimData_t *simData,
 * using an explicit method.
 ***********************************************************/
 void solve_explicit_sequential(SimData_t *simData, 
-                               int        varIdx)
+                               int        xId)
 {
-  SimParam_t *simParam  = simData->simParam;
-  simParam->tmp_varIdx  = varIdx;
+  SimParam_t *simParam = simData->simParam;
+  simParam->tmp_xId    = xId;
 
   /*--------------------------------------------------------
   | Add right hand side to solution 
@@ -231,10 +566,10 @@ void solve_explicit_sequential(SimData_t *simData,
 ***********************************************************/
 void solve_implicit_sequential(SimData_t *simData, 
                                computeAx  cmpAx,
-                               int        varIdx)
+                               int        xId)
 {
-  SimParam_t *simParam  = simData->simParam;
-  simParam->tmp_varIdx  = varIdx;
+  SimParam_t *simParam = simData->simParam;
+  simParam->tmp_xId    = xId;
 
   /*--------------------------------------------------------
   | Initialize Krylov solver buffer variables
@@ -251,7 +586,7 @@ void solve_implicit_sequential(SimData_t *simData,
   /*--------------------------------------------------------
   | Solve linear equation system using Krylov solver
   --------------------------------------------------------*/
-  linSolve_bicgstab(simData, cmpAx, varIdx);
+  linSolve_bicgstab(simData, cmpAx, xId);
 
 
 } /* solve_implicit_sequential()*/

@@ -44,7 +44,7 @@ void init_function(QuadData_t *quadData)
   //quadData->vars[IS]  = sin(2.0*M_PI*r2/w)*exp(arg);
   quadData->vars[IS]  = exp(arg);
   quadData->vars[IVX] = 1.0;
-  quadData->vars[IVY] = 0.0;
+  quadData->vars[IVY] = 1.0;
   quadData->vars[IVZ] = 0.0;
   quadData->vars[IRHO] = 1.0;
 

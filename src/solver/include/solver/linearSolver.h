@@ -40,16 +40,141 @@
 #include "solver/simData.h"
 #include "solver/quadData.h"
 
-
-
 /***********************************************************
 * computeAx()
 *-----------------------------------------------------------
 * Function pointer to function for calculation of Ax.
 ***********************************************************/
 typedef void (*computeAx) (SimData_t *simData,
-                           int        varIdx,
+                           int        xId,
                            int        sbufIdx);
+
+/***********************************************************
+* linSolve_exchangeScalarBuffer()
+*-----------------------------------------------------------
+* Linear solver function to sum a scalar buffer 
+* variable over all MPI processes 
+***********************************************************/
+void linSolve_exchangeScalarBuffer(SimData_t      *simData, 
+                                   int             sbufId,
+                                   sc_MPI_Datatype varType,
+                                   sc_MPI_Op       mpiType);
+
+
+/***********************************************************
+* linSolve_scalarProd()
+*-----------------------------------------------------------
+* Linear solver function to multiply two field variables 
+* a and b according to
+*
+*   c = a_i * b_i
+*
+* and store the in a scalar variable c.
+***********************************************************/
+void linSolve_scalarProd(SimData_t *simData, 
+                         int aId, int bId, int cId);
+
+/***********************************************************
+* linSolve_fieldProd()
+*-----------------------------------------------------------
+* Linear solver function to multiply two field variables 
+* a and b according to
+* *   c_i = a_i * b_i
+*
+* and store the in another field variable c.
+***********************************************************/
+void linSolve_fieldProd(SimData_t *simData, 
+                        int aId, int bId, int cId);
+
+
+/***********************************************************
+* linSolve_scalarSum()
+*-----------------------------------------------------------
+* Linear solver function to add two field variables 
+* a and b according to
+*
+*   c = w_a * a_i + w_b * b_i
+*
+* and store the in a scalar variable c.
+***********************************************************/
+void linSolve_scalarSum(SimData_t *simData, 
+                        int aId, int bId, int cId,
+                        octDouble w_a, octDouble w_b);
+
+/***********************************************************
+* linSolve_fieldSum()
+*-----------------------------------------------------------
+* Linear solver function to add two field variables a and b
+* according to
+*
+*   c_i = w_a * a_i + w_b * b_i
+*
+* and store the in another field variable c.
+***********************************************************/
+void linSolve_fieldSum(SimData_t *simData, 
+                       int aId, int bId, int cId, 
+                       octDouble w_a, octDouble w_b);
+
+/***********************************************************
+* linSolve_fieldCopy()
+*-----------------------------------------------------------
+* Linear solver function to add two field variables a into
+* a field variable b
+***********************************************************/
+void linSolve_fieldCopy(SimData_t *simData, 
+                       int aId, int bId);
+
+
+/***********************************************************
+* linSolve_fieldSum_cb()
+*-----------------------------------------------------------
+* p4est_iter_volume_t callback function for 
+* linSolve_fieldSum()
+***********************************************************/
+void linSolve_fieldSum_cb(p4est_iter_volume_info_t *info,
+                          void *user_data);
+
+/***********************************************************
+* linSolve_scalarSum_cb()
+*-----------------------------------------------------------
+* p4est_iter_volume_t callback function for 
+* linSolve_scalarSum()
+***********************************************************/
+void linSolve_scalarSum_cb(p4est_iter_volume_info_t *info,
+                           void *user_data);
+
+/***********************************************************
+* linSolve_fieldProd_cb()
+*-----------------------------------------------------------
+* p4est_iter_volume_t callback function for 
+* linSolve_fieldProd()
+***********************************************************/
+void linSolve_fieldProd_cb(p4est_iter_volume_info_t *info,
+                           void *user_data);
+
+/***********************************************************
+* linSolve_scalarProd_cb()
+*-----------------------------------------------------------
+* p4est_iter_volume_t callback function for 
+* linSolve_scalarProd()
+***********************************************************/
+void linSolve_scalarProd_cb(p4est_iter_volume_info_t *info,
+                            void *user_data);
+
+/***********************************************************
+* linSolve_fieldCopy_cb()
+*-----------------------------------------------------------
+* p4est_iter_volume_t callback function for 
+* linSolve_fieldCopy()
+***********************************************************/
+void linSolve_fieldCopy_cb(p4est_iter_volume_info_t *info,
+                           void *user_data);
+
+
+
+
+
+
 
 /***********************************************************
 * resetSolverBuffers()
@@ -84,7 +209,7 @@ void addRightHandSide(p4est_iter_volume_info_t *info,
 ***********************************************************/
 void linSolve_bicgstab(SimData_t *simData,
                        computeAx  cmpAx,
-                       int        varIdx);
+                       int        xId);
 
 /***********************************************************
 * solve_explicit_sequential()
@@ -94,7 +219,7 @@ void linSolve_bicgstab(SimData_t *simData,
 * using an explicit method.
 ***********************************************************/
 void solve_explicit_sequential(SimData_t *simData, 
-                               int        varIdx);
+                               int        xId);
 
 /***********************************************************
 * solve_implicit_sequential()
@@ -105,6 +230,6 @@ void solve_explicit_sequential(SimData_t *simData,
 ***********************************************************/
 void solve_implicit_sequential(SimData_t *simData, 
                                computeAx  cmpAx,
-                               int        varIdx);
+                               int        xId);
 
 #endif /* SOLVER_LINEARSOLVER_H */

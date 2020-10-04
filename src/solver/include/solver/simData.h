@@ -49,6 +49,16 @@
 typedef struct SimParam_t
 {
 
+  /* number of elements in the entire domain */
+  int n_elements_glob;
+  /* number of elements in domain of current process */
+  int n_elements_loc;
+
+  /* volume of all elements in the entire domain */
+  octDouble volume_glob;
+  /* volume of all elements of current process */
+  octDouble volume_loc;
+
   /* Simulation timestep */
   octDouble timestep;
   /* Total simulation time to compute*/
@@ -80,11 +90,16 @@ typedef struct SimParam_t
   /*--------------------------------------------------------
   | Temporary values
   --------------------------------------------------------*/
-  int       tmp_varIdx;    /* Variables index             */
-  int       tmp_sbufIdx;   /* Solver buffer index         */
-  octDouble tmp_fluxFac;   /* Factor for fluxes           */
-  octDouble tmp_globRes;   /* Global residual buffer      */
+  int       tmp_xId;       /* Variables index             */
+  int       tmp_AxId;      /* Solver buffer index         */
 
+  octDouble tmp_fluxFac;   /* Factor for fluxes           */
+
+  int       tmp_sbufVec0;
+  int       tmp_sbufVec1;
+  int       tmp_sbufProd;
+
+  octDouble sbuf[PARAM_BUF_VARS];
 
 } SimParam_t;
 
@@ -231,5 +246,24 @@ void destroy_solverParam(SolverParam_t *solverParam);
 * Frees all memory of a MPIParam structure
 ***********************************************************/
 void destroy_mpiParam(MPIParam_t *mpiParam);
+
+/***********************************************************
+* estimateMeshAttributes()
+*-----------------------------------------------------------
+* Estimate global mesh attributes such as number of elements
+* e.g.
+*
+*   -> p4est_iter_volume_t callback function
+***********************************************************/
+void estimateMeshAttributes(p4est_iter_volume_info_t *info,
+                            void *user_data);
+
+/***********************************************************
+* exchangeGlobMeshAttrib()
+*-----------------------------------------------------------
+* Function to exchange global mesh attributes among all
+* processes
+***********************************************************/
+void exchangeGlobMeshAttrib(SimData_t *simData);
 
 #endif /* SOLVER_SIMDATA_H */

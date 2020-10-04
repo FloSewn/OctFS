@@ -41,6 +41,7 @@
 #include <p8est_iterate.h>
 #endif
 
+
 /***********************************************************
 * init_simData()
 *-----------------------------------------------------------
@@ -95,6 +96,22 @@ SimData_t *init_simData(int          argc,
                                  sizeof(QuadData_t),
                                  init_quadData,
                                  (void *) (simData));
+
+  /*--------------------------------------------------------
+  | Estimate global mesh attributes
+  --------------------------------------------------------*/
+  p4est_iterate(simData->p4est, NULL, NULL,
+                estimateMeshAttributes, // cell callback
+                NULL,               // face callback
+#ifdef P4_TO_P8
+                NULL,               // edge callback
+#endif
+                NULL);              // corner callback*/
+
+  /*--------------------------------------------------------
+  | Exchange data global among processes
+  --------------------------------------------------------*/
+  exchangeGlobMeshAttrib(simData);
 
   /*--------------------------------------------------------
   | Init p4est ghost data structure
@@ -163,13 +180,20 @@ SimParam_t *init_simParam(octInitFun   usrInitFun,
                           octRefineFun usrRefineFun,
                           octCoarseFun usrCoarseFun)
 {
+  int i;
+
   SimParam_t *simParam = malloc(sizeof(SimParam_t));
 
+  simParam->n_elements_glob = 0;
+  simParam->n_elements_loc  = 0;
+  simParam->volume_glob     = 0.0;
+  simParam->volume_loc      = 0.0;
+
   simParam->timestep      = 5e-3;
-  simParam->simTimeTot    = 1.0;
+  simParam->simTimeTot    = 5e-3;
   simParam->simTime       = 0.0;
 
-  simParam->tempScheme     = EULER_EXPLICIT;
+  simParam->tempScheme     = CRANK_NICOLSON;
   simParam->tempFluxFac[0] = 0.0;
   simParam->tempFluxFac[1] = 1.0;
   simParam->tempFluxFac[2] = 0.5;
@@ -187,10 +211,17 @@ SimParam_t *init_simParam(octInitFun   usrInitFun,
   /*--------------------------------------------------------
   | Temporary values
   --------------------------------------------------------*/
-  simParam->tmp_varIdx  = -1;
-  simParam->tmp_sbufIdx = -1;
+  simParam->tmp_xId  = -1;
+  simParam->tmp_AxId = -1;
+
   simParam->tmp_fluxFac = 0.0;
-  simParam->tmp_globRes = 0.0;
+
+  simParam->tmp_sbufVec0 = -1;
+  simParam->tmp_sbufVec1 = -1;
+  simParam->tmp_sbufProd = -1;
+
+  for (i = 0; i < PARAM_BUF_VARS; i++)
+    simParam->sbuf[i] = 0.0;
 
   return simParam;
 
@@ -227,7 +258,7 @@ SolverParam_t *init_solverParam(void)
   // Re-Partition on coarsening
   solverParam->partForCoarsen = TRUE;
   // Turn on/off automatic grid adaptation
-  solverParam->adaptGrid = TRUE;
+  solverParam->adaptGrid = FALSE;
 
   // Global refinement error for passive scalar 
   solverParam->refErr_scalar    = 0.05;
@@ -330,3 +361,47 @@ void destroy_mpiParam(MPIParam_t *mpiParam)
   free(mpiParam);
   
 } /* destroy_mpiParam() */
+
+/***********************************************************
+* estimateMeshAttributes()
+*-----------------------------------------------------------
+* Estimate global mesh attributes such as number of elements
+* e.g.
+*
+*   -> p4est_iter_volume_t callback function
+***********************************************************/
+void estimateMeshAttributes(p4est_iter_volume_info_t *info,
+                            void *user_data)
+{
+  QuadData_t *quadData = (QuadData_t*)info->quad->p.user_data;
+  SimData_t  *simData  = (SimData_t*)info->p4est->user_pointer;
+  SimParam_t *simParam = simData->simParam;
+
+  simParam->n_elements_loc += 1;
+  simParam->volume_loc += quadData->volume;
+
+} /* estimateMeshAttributes() */
+
+/***********************************************************
+* exchangeGlobMeshAttrib()
+*-----------------------------------------------------------
+* Function to exchange global mesh attributes among all
+* processes
+***********************************************************/
+void exchangeGlobMeshAttrib(SimData_t *simData)
+{
+  sc_MPI_Allreduce(&simData->simParam->n_elements_loc,
+                   &simData->simParam->n_elements_glob,
+                   1,
+                   sc_MPI_INT,
+                   sc_MPI_SUM,
+                   simData->mpiParam->mpiComm);
+
+  sc_MPI_Allreduce(&simData->simParam->volume_loc,
+                   &simData->simParam->volume_glob,
+                   1,
+                   sc_MPI_DOUBLE,
+                   sc_MPI_SUM,
+                   simData->mpiParam->mpiComm);
+
+} /* exchangeGlobMeshAttrib() */

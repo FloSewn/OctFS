@@ -46,16 +46,32 @@
 /***********************************************************
 * Solver variables
 ***********************************************************/
-#define OCT_MAX_VARS        6 /* Max. number of variables */
+#define OCT_MAX_VARS       17 /* Max. number of variables */
+#define OCT_SOLVER_VARS    11 /* Number of solver variab. */
 #define OCT_VARNAME_LENGTH 32 /* Max. var. name length    */
 
-#define SOLVER_BUF_VARS    10 /* No. of lin. solver buffs.*/
+#define QUAD_BUF_VARS    10 /* No. of lin. solver buffs.*/
+#define PARAM_BUF_VARS   10 /* No. of lin. solver buffs.*/
 
 /***********************************************************
 * Solver indices
+*-----------------------------------------------------------
+* Indices for buffer variables of linear solver are
+* stored for every quad structure prior to field variables
 ***********************************************************/
 typedef enum 
 {
+  SAX,  /* Holds results for the product Ax               */
+  SB,   /* Holds results for the right hand side b        */
+  SVN,  /* Holds new updated values of variable data      */
+  SR,   /* Contains solution to (b - Ax) at iteration n   */
+  SR0,  /* Contains solution to (b - Ax) at iteration 0   */
+  SP,   /* Direction for new solution                     */
+  SV,   /* Holds A*p                                      */
+  SH,   /* x - alpha * p                                  */
+  SS,   /* r - alpha * v                                  */
+  ST,   /*                                                */
+  SRES, /* buffer for general (b - Ax)                    */
   IRHO,
   IVX,
   IVY,
@@ -75,21 +91,19 @@ typedef enum
 } TempScheme;
 
 /***********************************************************
-* Indices for buffer variables of linear solver 
+* Indices for buffer variables of linear solver that are
+* stored in the simParam struct
 ***********************************************************/
-typedef enum 
+typedef enum
 {
-  LS_AX,  /* Holds results for the product Ax             */
-  LS_B,   /* Holds results for the right hand side b      */
-  LS_VN,  /* Holds new updated values of variable data    */
-  LS_R,   /* Contains solution to (b - Ax) at iteration n */
-  LS_R0,  /* Contains solution to (b - Ax) at iteration 0 */
-  LS_P,   /* Direction for new solution                   */
-  LS_V,   /* Holds A*p                                    */
-  LS_H,   /* x - alpha * p                                */
-  LS_S,   /* r - alpha * v                                */
-  LS_t    /*                                              */
-} LinSolveIndex;
+  PR0,  /* rho_0                                          */
+  PA,   /* alpha                                          */
+  PO,   /* omega                                          */
+  PR,   /* rho                                            */
+  PB,   /* beta                                           */
+  PRES, /* residual                                       */
+  PGRES /* global residual                                */
+} SimParamBufIndex;
 
 /***********************************************************
 * Typedefs for simData.h

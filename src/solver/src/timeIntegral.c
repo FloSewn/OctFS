@@ -51,20 +51,17 @@
 void addTimeDerivative(p4est_iter_volume_info_t *info,
                        void *user_data)
 {
-  p4est_quadrant_t *q     = info->quad;
-  p4est_t          *p4est = info->p4est;
-
-  SimData_t  *simData  = (SimData_t *) p4est->user_pointer;
-  QuadData_t *quadData = (QuadData_t *) q->p.user_data;
+  SimData_t  *simData  = (SimData_t*)info->p4est->user_pointer;
+  QuadData_t *quadData = (QuadData_t*)info->quad->p.user_data;
   SimParam_t *simParam = simData->simParam;
 
-  int       varIdx  = simParam->tmp_varIdx;
-  int       bufIdx  = simParam->tmp_sbufIdx;
-  octDouble vol     = quadData->volume;
-  octDouble dt      = simParam->timestep;
-  octDouble rho     = quadData->vars[IRHO];
-  octDouble var     = quadData->vars[varIdx];
+  int       xId  = simParam->tmp_xId;
+  int       AxId = simParam->tmp_AxId;
+  octDouble vol  = quadData->volume;
+  octDouble dt   = simParam->timestep;
+  octDouble rho  = quadData->vars[IRHO];
+  octDouble var  = quadData->vars[xId];
 
-  quadData->sbuf[bufIdx][varIdx] += vol * var * rho / dt; 
+  quadData->vars[AxId] += vol * var * rho / dt; 
 
 } /* addTimeDerivative() */

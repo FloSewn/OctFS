@@ -53,14 +53,26 @@ void resetSolverBuffers(p4est_iter_volume_info_t *info,
 *   Ax = b 
 * that underlies a discretized transport equation.
 ***********************************************************/
-void compute_b_tranEq(SimData_t *simData, int varIdx);
+void compute_b_tranEq(SimData_t *simData, int xId);
+
+/***********************************************************
+* compute_Ax_tranEq()
+*-----------------------------------------------------------
+* This function sums up the left hand side of the equation
+* system
+*   Ax = b 
+* that underlies a discretized transport equation.
+***********************************************************/
+void compute_Ax_tranEq(SimData_t *simData, 
+                       int        xId, 
+                       int        sbufIdx);
 
 /***********************************************************
 * solveTranEq()
 *-----------------------------------------------------------
 * Function to solve a transport equation for a specified
-* variable <varIdx>.
+* variable <xId>.
 ***********************************************************/
-void solveTranEq(SimData_t *simData, int varIdx);
+void solveTranEq(SimData_t *simData, int xId);
 
 #endif /* SOLVER_SOLVETRANEQ_H */
