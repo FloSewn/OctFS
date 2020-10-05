@@ -165,18 +165,17 @@ void solverRun(SimData_t *simData)
     |-----------------------------------------------------*/
     if (!(step % writePeriod)) 
     {
-      octPrint("WRITE SOLUTION FILE FOR STEP %d", step);
-      writeSolutionVtk(simData, step);
+      octPrint("WRITE SOLUTION FILE FOR STEP %d", step+1);
+      writeSolutionVtk(simData, step+1);
     }
-
 
   } /* for (time, step ...) */
 
   /*------------------------------------------------------
   | Write final solution
   |-----------------------------------------------------*/
-  octPrint("WRITE SOLUTION FILE FOR STEP %d", step);
-  writeSolutionVtk(simData, step);
+  octPrint("WRITE SOLUTION FILE FOR STEP %d", step+1);
+  writeSolutionVtk(simData, step+1);
 
   /*--------------------------------------------------------
   | Release ghost data

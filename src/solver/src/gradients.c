@@ -316,6 +316,13 @@ void computeGradients(SimData_t *simData, int varIdx)
   -------------------------------------------------------*/
   setGradVarIdx(varIdx);
 
+  /*--------------------------------------------------------
+  | Exchange data
+  --------------------------------------------------------*/
+  p4est_ghost_exchange_data(simData->p4est, 
+                            simData->ghost, 
+                            simData->ghostData);
+
   /*-------------------------------------------------------
   | Green-Gauss gradient estimation
   -------------------------------------------------------*/

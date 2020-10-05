@@ -48,12 +48,6 @@
 ***********************************************************/
 typedef struct SimParam_t
 {
-
-  /* number of elements in the entire domain */
-  int n_elements_glob;
-  /* number of elements in domain of current process */
-  int n_elements_loc;
-
   /* volume of all elements in the entire domain */
   octDouble volume_glob;
   /* volume of all elements of current process */

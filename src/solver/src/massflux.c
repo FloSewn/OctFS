@@ -311,6 +311,14 @@ void initMassfluxes(SimData_t *simData)
   p4est_ghost_t *ghost       = simData->ghost;
   QuadData_t    *ghostData   = simData->ghostData;
 
+
+  /*--------------------------------------------------------
+  | Exchange data
+  --------------------------------------------------------*/
+  p4est_ghost_exchange_data(simData->p4est, 
+                            simData->ghost, 
+                            simData->ghostData);
+
   /*-------------------------------------------------------
   | Set all massfluxes to zero
   -------------------------------------------------------*/
@@ -323,13 +331,6 @@ void initMassfluxes(SimData_t *simData)
                 NULL,            // edge callback
 #endif
                 NULL);           // corner callback*/
-
-  /*--------------------------------------------------------
-  | Exchange data
-  --------------------------------------------------------*/
-  p4est_ghost_exchange_data(simData->p4est, 
-                            simData->ghost, 
-                            simData->ghostData);
 
 
 } /* calcMassfluxes() */

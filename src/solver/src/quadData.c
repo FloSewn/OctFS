@@ -94,20 +94,6 @@ void init_quadFlowData(QuadData_t *quadData)
   for (i = 0; i < 2*P4EST_DIM; i++)
     quadData->mflux[i] = 0.0;
 
-  /*--------------------------------------------------------
-  | buffers for flow solver 
-  --------------------------------------------------------*
-  quadData->Ax_p = NULL;
-
-  for (i = 0; i < OCT_MAX_VARS; i++)
-  {
-    quadData->res[i] = 0.0;
-
-    for (j = 0; j < QUAD_BUF_VARS; j++)
-      quadData->sbuf[j][i] = 0.0;
-  }*/
-
-
 } /* init_quadFlowData() */
 
 
@@ -302,7 +288,7 @@ void interpQuadData(p4est_t          *p4est,
     {
       childData = (QuadData_t *) outgoing[i]->p.user_data;
 
-      for (j = 0; j < OCT_MAX_VARS; j++)
+      for (j = OCT_SOLVER_VARS; j < OCT_MAX_VARS; j++)
       {
         parentData->vars[j] += childData->vars[j];
 
@@ -316,7 +302,7 @@ void interpQuadData(p4est_t          *p4est,
     /*------------------------------------------------------
     | Normalize with number of children
     ------------------------------------------------------*/
-    for (j = 0; j < OCT_MAX_VARS; j++)
+    for (j = OCT_SOLVER_VARS; j < OCT_MAX_VARS; j++)
     {
       parentData->vars[j] /= P4EST_CHILDREN;
 
@@ -360,7 +346,7 @@ void interpQuadData(p4est_t          *p4est,
       /*----------------------------------------------------
       | Inpterpolate flow field data
       ----------------------------------------------------*/
-      for (j = 0; j < OCT_MAX_VARS; j++)
+      for (j = OCT_SOLVER_VARS; j < OCT_MAX_VARS; j++)
       {
         childData->vars[j] = parentData->vars[j];
       }
@@ -371,7 +357,7 @@ void interpQuadData(p4est_t          *p4est,
       {
         const octDouble  dx = cxx[k] - pxx[k];
 
-        for (j = 0; j < OCT_MAX_VARS; j++)
+        for (j = OCT_SOLVER_VARS; j < OCT_MAX_VARS; j++)
         {
           childData->vars[j] += dx * parentData->grad_vars[j][k];
           childData->grad_vars[j][k] = parentData->grad_vars[j][k];

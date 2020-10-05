@@ -57,8 +57,8 @@ octDouble linSolve_calcGlobResidual(SimData_t *simData,
 {
   SimParam_t *simParam = simData->simParam;
 
-  const int       n_elements  = simParam->n_elements_glob;
-  const octDouble n_inv       = 1. / (octDouble) n_elements;
+  const int n_elements  = simData->p4est->global_num_quadrants;
+  const octDouble n_inv = 1. / (octDouble) n_elements;
 
   /*--------------------------------------------------------
   | vars[AxId] = A * vars[xId]
@@ -414,7 +414,7 @@ void linSolve_bicgstab(SimData_t *simData,
                        int        xId)
 {
   SimParam_t *simParam  = simData->simParam;
-  int n_elements        = simParam->n_elements_glob;
+  int n_elements        = simData->p4est->global_num_quadrants;
   const octDouble n_inv = 1. / (octDouble) n_elements;
 
   int k = 0;
@@ -433,10 +433,10 @@ void linSolve_bicgstab(SimData_t *simData,
   /*--------------------------------------------------------
   | Threshold parameters
   --------------------------------------------------------*/
-  int kMin = 4;
-  int kMax = 8;
+  int kMin = 2;
+  int kMax = 50;
 
-  octDouble eps = 1e-4;
+  octDouble eps = 1e-6;
 
   /*--------------------------------------------------------
   | Compute new Ax

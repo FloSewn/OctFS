@@ -97,6 +97,13 @@ void compute_b_tranEq(SimData_t *simData, int xId)
   simParam->tmp_AxId    = SB;
 
   /*--------------------------------------------------------
+  | Exchange data
+  --------------------------------------------------------*/
+  p4est_ghost_exchange_data(simData->p4est, 
+                            simData->ghost, 
+                            simData->ghostData);
+
+  /*--------------------------------------------------------
   | Update gradient
   --------------------------------------------------------*/
   computeGradients(simData, xId); 
@@ -134,12 +141,6 @@ void compute_b_tranEq(SimData_t *simData, int xId)
 #endif
                 NULL);                 // corner callback
 
-  /*--------------------------------------------------------
-  | Exchange data
-  --------------------------------------------------------*/
-  p4est_ghost_exchange_data(simData->p4est, 
-                            simData->ghost, 
-                            simData->ghostData);
 
 } /* compute_b_tranEq() */
 
@@ -164,6 +165,13 @@ void compute_Ax_tranEq(SimData_t *simData,
   simParam->tmp_fluxFac = simParam->tempFluxFac[scheme];
   simParam->tmp_xId     = xId;
   simParam->tmp_AxId    = sbufIdx;
+
+  /*--------------------------------------------------------
+  | Exchange data
+  --------------------------------------------------------*/
+  p4est_ghost_exchange_data(simData->p4est, 
+                            simData->ghost, 
+                            simData->ghostData);
 
   /*--------------------------------------------------------
   | Update gradient
@@ -202,13 +210,6 @@ void compute_Ax_tranEq(SimData_t *simData,
                 NULL,                  // edge callback
 #endif
                 NULL);                 // corner callback
-
-  /*--------------------------------------------------------
-  | Exchange data
-  --------------------------------------------------------*/
-  p4est_ghost_exchange_data(simData->p4est, 
-                            simData->ghost, 
-                            simData->ghostData);
 
 } /* compute_Ax_tranEq() */
 

@@ -184,13 +184,11 @@ SimParam_t *init_simParam(octInitFun   usrInitFun,
 
   SimParam_t *simParam = malloc(sizeof(SimParam_t));
 
-  simParam->n_elements_glob = 0;
-  simParam->n_elements_loc  = 0;
   simParam->volume_glob     = 0.0;
   simParam->volume_loc      = 0.0;
 
   simParam->timestep      = 5e-3;
-  simParam->simTimeTot    = 1.0; //5e-3;
+  simParam->simTimeTot    = 1.0; //1.0; //5e-3;
   simParam->simTime       = 0.0;
 
   simParam->tempScheme     = CRANK_NICOLSON;
@@ -258,7 +256,7 @@ SolverParam_t *init_solverParam(void)
   // Re-Partition on coarsening
   solverParam->partForCoarsen = TRUE;
   // Turn on/off automatic grid adaptation
-  solverParam->adaptGrid = FALSE;
+  solverParam->adaptGrid = TRUE;
 
   // Global refinement error for passive scalar 
   solverParam->refErr_scalar    = 0.05;
@@ -377,7 +375,6 @@ void estimateMeshAttributes(p4est_iter_volume_info_t *info,
   SimData_t  *simData  = (SimData_t*)info->p4est->user_pointer;
   SimParam_t *simParam = simData->simParam;
 
-  simParam->n_elements_loc += 1;
   simParam->volume_loc += quadData->volume;
 
 } /* estimateMeshAttributes() */
@@ -390,13 +387,6 @@ void estimateMeshAttributes(p4est_iter_volume_info_t *info,
 ***********************************************************/
 void exchangeGlobMeshAttrib(SimData_t *simData)
 {
-  sc_MPI_Allreduce(&simData->simParam->n_elements_loc,
-                   &simData->simParam->n_elements_glob,
-                   1,
-                   sc_MPI_INT,
-                   sc_MPI_SUM,
-                   simData->mpiParam->mpiComm);
-
   sc_MPI_Allreduce(&simData->simParam->volume_loc,
                    &simData->simParam->volume_glob,
                    1,
