@@ -84,8 +84,6 @@ void solverRun(SimData_t *simData)
   {
     simParam->simTime += dt;
 
-    octPrint("TIME STEP %d", step);
-
     /*------------------------------------------------------
     | Perform a refinement of the domain
     ------------------------------------------------------*/
@@ -154,11 +152,12 @@ void solverRun(SimData_t *simData)
     /*------------------------------------------------------
     | Solve projection step
     |-----------------------------------------------------*/
+    octPrint("");
+    octPrint("Step %6d | t=%10.3e", step+1, time);
+    octPrint("--------------------------------------------------------------");
     doProjectionStep(simData);
-
-    /*------------------------------------------------------
-    | Print out solver data to user
-    |-----------------------------------------------------*/
+    octPrint("--------------------------------------------------------------");
+    octPrint("");
 
     /*------------------------------------------------------
     | Write solution
@@ -167,7 +166,9 @@ void solverRun(SimData_t *simData)
     {
       octPrint("WRITE SOLUTION FILE FOR STEP %d", step+1);
       writeSolutionVtk(simData, step+1);
+      octPrint("");
     }
+
 
   } /* for (time, step ...) */
 

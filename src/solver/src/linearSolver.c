@@ -42,6 +42,20 @@
 #endif
 
 /***********************************************************
+* linSolve_printResidual()
+*-----------------------------------------------------------
+* Function to print the calculated residual on the current
+* process
+***********************************************************/
+void linSolve_printResidual(int xId, int k, 
+                            octDouble r0, octDouble r)
+{
+  octPrint("%d | k=%4d | r0=%10.3e | rn=%10.3e | rn/r0=%10.3e",
+      xId, k, r0, r, r/r0);
+
+} /* linSolve_printResidual() */
+
+/***********************************************************
 * linSolve_calcGlobResidual()
 *-----------------------------------------------------------
 * Linear solver function for the calculaiton of the global 
@@ -576,6 +590,14 @@ void linSolve_bicgstab(SimData_t *simData,
                       1.0, -simParam->sbuf[PO]);
 
   } /* while( k < kMax ) */
+
+
+  /*--------------------------------------------------------
+  | Print out residuals for user
+  --------------------------------------------------------*/
+  linSolve_printResidual(xId, k, 
+                         simParam->sbuf[PGRES], 
+                         simParam->sbuf[PRES]);
 
 
 } /* linSolve_bicgstab() */

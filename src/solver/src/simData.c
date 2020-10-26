@@ -28,6 +28,8 @@
 #include "solver/refine.h"
 #include "solver/coarsen.h"
 #include "solver/gradients.h"
+#include "solver/paramfile.h"
+#include "aux/dbg.h"
 
 #ifndef P4_TO_P8
 #include <p4est_vtk.h>
@@ -53,6 +55,16 @@ SimData_t *init_simData(int          argc,
                         octRefineFun usrRefineFun,
                         octCoarseFun usrCoarseFun)
 {
+  /*--------------------------------------------------------
+  | Check that parameter file exists
+  --------------------------------------------------------*/
+  check(argc > 1,
+      "\n\nNo parameter file provided!\n\n  OctFS <Parameter file>\n");
+  const char *paramFilePath = argv[1];
+
+  /*--------------------------------------------------------
+  | Create data structures
+  --------------------------------------------------------*/
   SimData_t *simData = malloc(sizeof(SimData_t));
 
   simData->simParam    = NULL;
@@ -69,6 +81,11 @@ SimData_t *init_simData(int          argc,
                                        usrCoarseFun);
   simData->solverParam = init_solverParam();
   simData->mpiParam    = init_mpiParam(argc, argv);
+
+  /*--------------------------------------------------------
+  | Read parameter file
+  --------------------------------------------------------*/
+  octParam_readParamfile(simData, paramFilePath);
 
   /*--------------------------------------------------------
   | Load p4est mesh connectivity
@@ -168,6 +185,9 @@ SimData_t *init_simData(int          argc,
     computeGradients(simData, idx); 
 
   return simData;
+
+error:
+  return NULL;
 
 } /* init_simData() */
 

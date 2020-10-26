@@ -1,0 +1,34 @@
+#-----------------------------------------------------------
+# OctFS - Parameter File
+#-----------------------------------------------------------
+
+
+
+#-----------------------------------------------------------
+# Simulation parameters
+#-----------------------------------------------------------
+                  Simulation time step [s]: 5.0E-3
+                 Total simulation time [s]: 1.0
+#           Temporal discretization scheme: Crank-Nicolson
+
+      Reference kinematic viscosity [Pa*s]: 1.0E-5
+                Reference length scale [m]: 1.0
+                    Reference velocity [m]: 1.0
+                   Reference pressure [Pa]: 1.0E+05
+
+#-----------------------------------------------------------
+# Solver parameters
+#-----------------------------------------------------------
+
+                       Automatic grid adaptation (0/1): 1
+                   Refinement level for initialization: 5
+            Maximum refinement level during simulation: 6
+              Fill uniformly upon initialization (0/1): 1 
+                        Use recursive refinement (0/1): 1
+                  Repartition on grid coarsening (0/1): 1
+
+                                     Refinement period: 10
+                                 Repartitioning period: 10
+                                         Output period: 10
+            
+

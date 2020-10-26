@@ -1,4 +1,6 @@
 #include <assert.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #include "aux/dbg.h"
 #include "aux/minunit.h"
@@ -10,10 +12,6 @@
 #include "solver/gradients.h"
 
 #include "solver_tests.h"
-
-#include <stdio.h>
-#include <stdlib.h>
-
 
 #define CUR_TEST_NAME "solver_tests"
 
@@ -205,9 +203,11 @@ char *test_solver_init_destroy(int argc, char *argv[])
                                     refine_fn,
                                     coarse_fn);
 
+  /*
   writeSolutionVtk(simData, 0);
 
   solverRun(simData);
+  */
 
   destroy_simData(simData);
 
