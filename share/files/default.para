@@ -8,8 +8,8 @@
 # Simulation parameters
 #-----------------------------------------------------------
                   Simulation time step [s]: 5.0E-3
-                 Total simulation time [s]: 1.0
-#           Temporal discretization scheme: Crank-Nicolson
+                 Total simulation time [s]: 1.0 #2.0
+            Temporal discretization scheme: Crank-Nicolson
 
       Reference kinematic viscosity [Pa*s]: 1.0E-5
                 Reference length scale [m]: 1.0

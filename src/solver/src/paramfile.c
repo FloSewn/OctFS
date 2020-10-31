@@ -85,7 +85,7 @@ int octParam_initParameters(SimData_t *simData,
      -1, -1.0, NULL},
     {"Temporal discretization scheme:",
      &simParam->tempScheme, STRVAL, FALSE, 
-     -1, -1.0, "Euler-Forward"},
+     -1, -1.0, "Crank-Nicolson"},
     {"Reference kinematic viscosity [Pa*s]:",
      &simParam->viscosity, DBLVAL, FALSE, 
      -1, 1.0E-5, NULL},
@@ -134,7 +134,7 @@ int octParam_initParameters(SimData_t *simData,
       }
       else if (simParamInst[i].pType == STRVAL)
       {
-        *(char*)simParamInst[i].value = simParamInst[i].strDefault;
+        *(bstring*)simParamInst[i].value = bfromcstr((char*) simParamInst[i].strDefault);
       }
     }
 
